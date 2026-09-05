@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="412" height="228" viewBox="0 0 412 228" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Glow Effect Behind Podium" filter="url(#filter0_f_0_6)">
+<path d="M50 114C50 78.6538 78.6538 50 114 50H298C333.346 50 362 78.6538 362 114C362 149.346 333.346 178 298 178H114C78.6538 178 50 149.346 50 114Z" fill="#FFB3B5" fill-opacity="0.2"/>
+</g>
+<defs>
+<filter id="filter0_f_0_6" x="0" y="0" width="412" height="228" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="25" result="effect1_foregroundBlur_0_6"/>
+</filter>
+</defs>
+</svg>
