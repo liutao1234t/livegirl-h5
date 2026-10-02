@@ -20,12 +20,12 @@ export type CoinPack = {
 export const NEWBIE_COINS = 150;
 
 export const coinPacks: CoinPack[] = [
-  { id: "p1", productId: "Coin_test_2", col: 1, coins: 150, price: "$2.99" },
-  { id: "p4", productId: "Coin_test_3", col: 2, coins: 600, price: "$9.99" },
-  { id: "p5", productId: "Coin_test_4", col: 1, coins: 1250, price: "$19.99", bonus: 100, glow: true, glowLit: true, lg: true, badge: "56% User Take" },
-  { id: "p8", productId: "Coin_test_6", col: 2, coins: 3050, price: "$49.99", bonus: 300, glow: true, lg: true, shine: true, badge: "22% User Take", badgeTone: "mid" },
-  { id: "p7", productId: "Coin_test_5", col: 1, coins: 1750, price: "$29.99", bonus: 250 },
-  { id: "p10", productId: "Coin_test_7", col: 2, coins: 6200, price: "$99.99", bonus: 900, best: true, lg: true },
+  { id: "p1", productId: "com.user2.99.normal", col: 1, coins: 150, price: "$2.99" },
+  { id: "p4", productId: "com.user8.99.normal", col: 2, coins: 600, price: "$8.99" },
+  { id: "p5", productId: "com.user19.99.normal", col: 1, coins: 1250, price: "$19.99", bonus: 100, glow: true, glowLit: true, lg: true, badge: "56% User Take" },
+  { id: "p8", productId: "com.user49.99.normal", col: 2, coins: 3050, price: "$49.99", bonus: 300, glow: true, lg: true, shine: true, badge: "22% User Take", badgeTone: "mid" },
+  { id: "p7", productId: "com.user25.99.normal", col: 1, coins: 1750, price: "$25.99", bonus: 250 },
+  { id: "p10", productId: "com.user99.99.best", col: 2, coins: 6200, price: "$99.99", bonus: 900, best: true, lg: true },
 ];
 
 export type Gift = {

@@ -417,7 +417,7 @@ function UnlockCard() {
           Maybe later
         </button>
       </div>
-      <p className="unlock-price">Only $29.99</p>
+      <p className="unlock-price">Only $25.99</p>
     </div>
   );
 }

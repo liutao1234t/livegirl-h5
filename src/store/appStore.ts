@@ -12,7 +12,7 @@ import {
 import { type ChatMsg } from "../data/messages";
 import type { IapRequest } from "../data/iap";
 import { gifts, NEWBIE_COINS } from "../data/shop";
-import { cancelPendingIap, requestIap } from "../lib/nativeIap";
+import { cancelPendingIap, iapFailToast, iapSuccessToast, requestIap } from "../lib/nativeIap";
 import {
   askHostReply,
   fallbackHostReply,
@@ -521,7 +521,6 @@ export const useAppStore = create<AppState>()(
           reward3Until: Date.now() + REWARD3_DURATION_MS,
           hasPaid: true,
         });
-        get().showToast("Free calls unlocked for 72 hours");
       },
       offerReward3IfDue: () => {
         const { overlay, payBusy, userId, registeredAt, reward3Until, activeCall } = get();
@@ -563,10 +562,14 @@ export const useAppStore = create<AppState>()(
         if (get().payBusy) return;
         const token = ++paySeq;
         set({ payBusy: true });
-        void requestIap(request).then((ok) => {
+        void requestIap(request).then((outcome) => {
           if (token !== paySeq) return;
-          if (ok) apply();
-          else get().showToast("Purchase failed");
+          if (outcome.ok) {
+            apply();
+            get().showToast(iapSuccessToast());
+          } else {
+            get().showToast(iapFailToast(outcome.reason));
+          }
           if (token !== paySeq) return;
           set({ payBusy: false });
         });

@@ -27,7 +27,7 @@ export function VipPage() {
       footer={
         <div className="vip-foot">
           <p>
-            <strong>$29.99</strong> <span>/ One Time</span>
+            <strong>$25.99</strong> <span>/ One Time</span>
           </p>
           <button
             className="btn-primary press"
