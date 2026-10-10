@@ -13,11 +13,18 @@ export function SplashPage() {
 
   useEffect(() => {
     if (!entering) return;
-    const t = window.setTimeout(() => {
-      startSession();
+    let cancelled = false;
+    const started = Date.now();
+    void (async () => {
+      await startSession();
+      const left = SPLASH_LOADING_MS - (Date.now() - started);
+      if (left > 0) await new Promise((r) => window.setTimeout(r, left));
+      if (cancelled) return;
       navigate("/app/home", { replace: true });
-    }, SPLASH_LOADING_MS);
-    return () => window.clearTimeout(t);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [entering, startSession, navigate]);
 
   return (

@@ -12,6 +12,7 @@ import {
 import { type ChatMsg } from "../data/messages";
 import type { IapRequest } from "../data/iap";
 import { gifts, NEWBIE_COINS } from "../data/shop";
+import { loginH5User, reportH5Purchase } from "../data/h5AccountRepo";
 import { cancelPendingIap, iapFailToast, iapSuccessToast, requestIap } from "../lib/nativeIap";
 import {
   askHostReply,
@@ -181,6 +182,7 @@ type Threads = Record<string, ChatMsg[]>;
 
 type AppState = {
   userId: string | null;
+  accessToken: string | null;
   coins: number;
   isVip: boolean;
   hasPaid: boolean;
@@ -219,7 +221,7 @@ type AppState = {
   finishCall: (girlId: string, durationSec: number, title: string) => void;
   submitAppleSupport: () => void;
   clearAppleSupport: () => void;
-  startSession: () => void;
+  startSession: () => Promise<void>;
   resetAccount: (mode: "logout" | "delete") => void;
   openOverlay: (id: OverlayId, girlId?: string) => void;
   closeOverlay: () => void;
@@ -259,6 +261,7 @@ function newUserId() {
 function blankProgress(userId: string | null) {
   return {
     userId,
+    accessToken: null as string | null,
     coins: 0,
     isVip: false,
     hasPaid: false,
@@ -298,6 +301,7 @@ let hostReplySeq = 0;
 let toastTimer: number | undefined;
 let paySeq = 0;
 let giftFxSeq = 0;
+let startSessionJob: Promise<void> | null = null;
 
 function cancelHostReplies() {
   for (const id of Object.keys(hostReplyJob)) delete hostReplyJob[id];
@@ -455,30 +459,52 @@ export const useAppStore = create<AppState>()(
         });
       },
       startSession: () => {
-        if (!get().userId) {
-          cancelHostReplies();
-          const userId = newUserId();
+        if (startSessionJob) return startSessionJob;
+        startSessionJob = (async () => {
+          const existingId = get().userId;
+          const login = await loginH5User(existingId);
+          const userId = existingId || login?.userId || newUserId();
+          const accessToken = login?.accessToken ?? get().accessToken ?? null;
+          const registeredAt =
+            login?.createdAtMs ?? get().registeredAt ?? resolveRegisteredAt(userId);
+
+          if (!existingId) {
+            cancelHostReplies();
+            set({
+              ...blankProgress(userId),
+              accessToken,
+              registeredAt,
+              coins: STARTING_COINS,
+              bills: [
+                {
+                  id: `${userId}-start`,
+                  title: "Starter Coins",
+                  at: stamp(),
+                  amount: STARTING_COINS,
+                  kind: "in",
+                },
+              ],
+              seenSplash: true,
+            });
+            rememberInboxPeople({});
+            void import("./sayHiStore").then((m) => m.resetSayHiSession());
+            void import("./incomingCallStore").then((m) => m.resetIncomingCallSession());
+            void import("../lib/firebase").then((m) =>
+              m.bindLocalUser(userId, login?.isNewUser !== false),
+            );
+            return;
+          }
+
           set({
-            ...blankProgress(userId),
-            coins: STARTING_COINS,
-            bills: [
-              {
-                id: `${userId}-start`,
-                title: "Starter Coins",
-                at: stamp(),
-                amount: STARTING_COINS,
-                kind: "in",
-              },
-            ],
             seenSplash: true,
+            userId,
+            accessToken,
+            registeredAt,
           });
-          rememberInboxPeople({});
-          void import("./sayHiStore").then((m) => m.resetSayHiSession());
-          void import("./incomingCallStore").then((m) => m.resetIncomingCallSession());
-          void import("../lib/firebase").then((m) => m.bindLocalUser(userId, true));
-          return;
-        }
-        set({ seenSplash: true });
+        })().finally(() => {
+          startSessionJob = null;
+        });
+        return startSessionJob;
       },
       openOverlay: (id, girlId) => set({ overlay: id, overlayGirlId: girlId ?? get().overlayGirlId }),
       closeOverlay: () =>
@@ -567,6 +593,14 @@ export const useAppStore = create<AppState>()(
           if (outcome.ok) {
             apply();
             get().showToast(iapSuccessToast());
+            const userId = get().userId;
+            if (userId) {
+              void reportH5Purchase({
+                userId,
+                iapId: request.productId,
+                amount: request.price,
+              });
+            }
           } else {
             get().showToast(iapFailToast(outcome.reason));
           }
@@ -771,6 +805,7 @@ export const useAppStore = create<AppState>()(
       name: "livegirl-progress",
       partialize: (s) => ({
         userId: s.userId,
+        accessToken: s.accessToken,
         coins: s.coins,
         isVip: s.isVip,
         hasPaid: s.hasPaid,
@@ -841,9 +876,10 @@ export const useAppStore = create<AppState>()(
         }
         if (state.userId) {
           void import("../lib/firebase").then((m) => m.bindLocalUser(state.userId as string, false));
+          void loginH5User(state.userId);
         }
       },
-      version: 10,
+      version: 11,
       migrate: (persisted, fromVersion) => {
         const next = { ...(persisted as Record<string, unknown>) };
         if (fromVersion < 2) {
@@ -888,6 +924,9 @@ export const useAppStore = create<AppState>()(
         }
         if (fromVersion < 10) {
           next.seenWelcome = Boolean(next.userId);
+        }
+        if (fromVersion < 11) {
+          next.accessToken = typeof next.accessToken === "string" ? next.accessToken : null;
         }
         return next as typeof persisted;
       },
