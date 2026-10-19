@@ -822,18 +822,34 @@ html.is-keyboard .tab-bar {
 .splash-bg {
   position: absolute;
   inset: 0;
+  transition: transform var(--dur-sheet) var(--ease);
 }
 
-.splash-bg img {
+.splash-bg img,
+.splash-bg video {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  pointer-events: none;
+}
+
+.splash-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(35, 12, 18, 0.2);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
 }
 
 .splash-bg::after {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 1;
   background: linear-gradient(to top, #230c12, rgba(35, 12, 18, 0.6) 50%, transparent);
 }
 
@@ -844,17 +860,96 @@ html.is-keyboard .tab-bar {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  align-items: stretch;
   padding: 0 20px max(40px, env(safe-area-inset-bottom));
 }
 
-.splash-loading {
+.splash-veil {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 1;
+  background: #230c12;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-sheet) var(--ease);
+}
+
+.splash-copy,
+.splash-cta {
+  opacity: 0;
+  animation: splash-rise var(--dur-page) var(--ease) both;
+}
+
+.splash-copy {
+  display: block;
+}
+
+.splash-copy-1 {
+  animation-delay: 40ms;
+}
+
+.splash-copy-2 {
+  animation-delay: 140ms;
+}
+
+.splash-cta {
   display: flex;
-  align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.55);
+  animation-delay: 240ms;
+}
+
+.splash.is-leaving {
+  pointer-events: none;
+}
+
+.splash.is-leaving .splash-copy,
+.splash.is-leaving .splash-cta {
+  animation-name: splash-lift;
+  animation-duration: 300ms;
+  animation-timing-function: var(--ease);
+  animation-fill-mode: both;
+}
+
+.splash.is-leaving .splash-cta {
+  animation-delay: 0ms;
+}
+
+.splash.is-leaving .splash-copy-2 {
+  animation-delay: 40ms;
+}
+
+.splash.is-leaving .splash-copy-1 {
+  animation-delay: 80ms;
+}
+
+.splash.is-leaving .splash-bg {
+  transform: scale(1.06);
+}
+
+.splash.is-leaving .splash-veil {
+  opacity: 0.72;
+}
+
+@keyframes splash-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes splash-lift {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -14px, 0);
+  }
 }
 
 .btn-primary:disabled {
@@ -867,6 +962,7 @@ html.is-keyboard .tab-bar {
   font-weight: 800;
   letter-spacing: -0.85px;
   line-height: 41px;
+  filter: drop-shadow(0 4px 1.5px rgba(0, 0, 0, 0.1)) drop-shadow(0 10px 4px rgba(0, 0, 0, 0.04));
 }
 
 .splash-body .lead {
@@ -874,6 +970,13 @@ html.is-keyboard .tab-bar {
   color: var(--text-muted);
   font-size: 17px;
   line-height: 22px;
+}
+
+.splash-body .btn-primary {
+  width: 280px;
+  max-width: 100%;
+  min-height: 60px;
+  align-self: center;
 }
 
 .btn-primary {
@@ -5756,8 +5859,19 @@ html.is-keyboard .sup-composer {
   .moment-viewer.is-out,
   .moment-viewer.is-in img,
   .moment-viewer.is-out img,
-  .gift-btn .icon-box {
+  .gift-btn .icon-box,
+  .splash-copy,
+  .splash-cta {
     animation-duration: 1ms;
+  }
+
+  .splash-bg,
+  .splash-veil {
+    transition: none;
+  }
+
+  .splash.is-leaving .splash-bg {
+    transform: none;
   }
 
   .online-ring.is-live::before {

@@ -13,6 +13,14 @@ import { type ChatMsg } from "../data/messages";
 import type { IapRequest } from "../data/iap";
 import { gifts, NEWBIE_COINS } from "../data/shop";
 import { loginH5User, reportH5Purchase } from "../data/h5AccountRepo";
+import {
+  consumeStarter,
+  freshDeviceNewbie,
+  inferDeviceNewbie,
+  normalizeDeviceNewbie,
+  sealDeviceNewbie,
+  type DeviceNewbie,
+} from "../lib/deviceNewbie";
 import { cancelPendingIap, iapFailToast, iapSuccessToast, requestIap } from "../lib/nativeIap";
 import {
   askHostReply,
@@ -183,6 +191,7 @@ type Threads = Record<string, ChatMsg[]>;
 type AppState = {
   userId: string | null;
   accessToken: string | null;
+  deviceNewbie: DeviceNewbie;
   coins: number;
   isVip: boolean;
   hasPaid: boolean;
@@ -326,11 +335,40 @@ function rememberGirl(girlId: string) {
   return girl;
 }
 
+function applyDeviceNewbie(userId: string | null, newbie: DeviceNewbie) {
+  const grant = Math.max(0, Math.min(STARTING_COINS, newbie.starterLeft));
+  return {
+    ...blankProgress(userId),
+    deviceNewbie: newbie,
+    coins: grant,
+    bills:
+      grant > 0
+        ? [
+            {
+              id: `${userId}-start`,
+              title: "Starter Coins",
+              at: stamp(),
+              amount: grant,
+              kind: "in" as const,
+            },
+          ]
+        : [],
+    seenWelcome: newbie.seenWelcome,
+    boughtNewbieOffer: newbie.boughtNewbieOffer,
+    lastFreeCallDate: newbie.lastFreeCallDate,
+    ratedUs: newbie.ratedUs,
+    lastCheckInDate: newbie.lastCheckInDate,
+    checkInCount: newbie.checkInCount,
+    dailyTaskDot: newbie.lastCheckInDate !== todayKey(),
+  };
+}
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       ...blankProgress(null),
       seenSplash: false,
+      deviceNewbie: freshDeviceNewbie(STARTING_COINS),
       sendSupportMessage: (text) => {
         const trimmed = text.trim();
         if (!trimmed || get().supportBusy) return;
@@ -377,7 +415,9 @@ export const useAppStore = create<AppState>()(
         const rate = passActive ? 0 : billedCallRate(ratePerMin, get().isVip);
         const coins = get().coins;
         const canPay = rate <= 0 || coins >= rate;
-        const useFree = !canPay && get().lastFreeCallDate !== todayKey() && isUsableVideoUrl(videoUrl);
+        const today = todayKey();
+        const freeUsed = get().lastFreeCallDate === today || get().deviceNewbie.lastFreeCallDate === today;
+        const useFree = !canPay && !freeUsed && isUsableVideoUrl(videoUrl);
         if (!canPay && !useFree) return false;
         const prevCalled = get().calledGirlIds ?? [];
         const calledGirlIds = prevCalled.includes(girlId) ? prevCalled : [...prevCalled, girlId];
@@ -397,7 +437,8 @@ export const useAppStore = create<AppState>()(
         }
         if (useFree) {
           set({
-            lastFreeCallDate: todayKey(),
+            lastFreeCallDate: today,
+            deviceNewbie: { ...get().deviceNewbie, lastFreeCallDate: today },
             calledGirlIds,
             activeCall: {
               girlId,
@@ -412,6 +453,7 @@ export const useAppStore = create<AppState>()(
         }
         set({
           coins: coins - rate,
+          deviceNewbie: consumeStarter(get().deviceNewbie, rate),
           calledGirlIds,
           activeCall: {
             girlId,
@@ -441,7 +483,12 @@ export const useAppStore = create<AppState>()(
           billedMinutes += 1;
         }
         if (billedMinutes !== call.billedMinutes) {
-          set({ coins, activeCall: { ...call, billedMinutes, spent } });
+          const spentNow = get().coins - coins;
+          set({
+            coins,
+            deviceNewbie: consumeStarter(get().deviceNewbie, spentNow),
+            activeCall: { ...call, billedMinutes, spent },
+          });
         }
         return true;
       },
@@ -471,19 +518,9 @@ export const useAppStore = create<AppState>()(
           if (!existingId) {
             cancelHostReplies();
             set({
-              ...blankProgress(userId),
+              ...applyDeviceNewbie(userId, get().deviceNewbie),
               accessToken,
               registeredAt,
-              coins: STARTING_COINS,
-              bills: [
-                {
-                  id: `${userId}-start`,
-                  title: "Starter Coins",
-                  at: stamp(),
-                  amount: STARTING_COINS,
-                  kind: "in",
-                },
-              ],
               seenSplash: true,
             });
             rememberInboxPeople({});
@@ -507,11 +544,15 @@ export const useAppStore = create<AppState>()(
         return startSessionJob;
       },
       openOverlay: (id, girlId) => set({ overlay: id, overlayGirlId: girlId ?? get().overlayGirlId }),
-      closeOverlay: () =>
+      closeOverlay: () => {
+        const welcome = get().overlay === "welcome";
         set({
           overlay: null,
-          ...(get().overlay === "welcome" ? { seenWelcome: true } : {}),
-        }),
+          ...(welcome
+            ? { seenWelcome: true, deviceNewbie: { ...get().deviceNewbie, seenWelcome: true } }
+            : {}),
+        });
+      },
       clearGiftFx: () => set({ giftFx: null }),
       toggleFollow: (girlId) => {
         const followedIds = get().followedIds;
@@ -537,9 +578,12 @@ export const useAppStore = create<AppState>()(
         set({ hasPaid: true });
       },
       buyNewbieOffer: () => {
-        if (get().boughtNewbieOffer) return;
+        if (get().boughtNewbieOffer || get().deviceNewbie.boughtNewbieOffer) return;
         get().buyCoins(NEWBIE_COINS, "Newbie Offer");
-        set({ boughtNewbieOffer: true });
+        set({
+          boughtNewbieOffer: true,
+          deviceNewbie: { ...get().deviceNewbie, boughtNewbieOffer: true },
+        });
       },
       buyReward3: () => {
         if (get().reward3Until != null) return;
@@ -730,6 +774,7 @@ export const useAppStore = create<AppState>()(
         }
         set({
           coins: coins - n,
+          deviceNewbie: consumeStarter(get().deviceNewbie, n),
           bills: [{ id: `${Date.now()}`, title, at: stamp(), amount: -n, kind: "out" }, ...get().bills],
         });
         return true;
@@ -748,24 +793,34 @@ export const useAppStore = create<AppState>()(
         });
       },
       claimDaily: () => {
-        const { lastCheckInDate, checkInCount } = get();
-        const { claimedToday, day, reward } = resolveCheckIn(lastCheckInDate, checkInCount);
+        const { lastCheckInDate, checkInCount, deviceNewbie } = get();
+        const claimedOnDevice = deviceNewbie.lastCheckInDate === todayKey();
+        const { claimedToday, day, reward } = resolveCheckIn(
+          claimedOnDevice ? deviceNewbie.lastCheckInDate : lastCheckInDate,
+          claimedOnDevice ? deviceNewbie.checkInCount : checkInCount,
+        );
         if (claimedToday) return;
+        const today = todayKey();
         get().addCoins(reward, day === 7 ? "Day 7 Bonus" : `Check-in Day ${day}`);
         set({
-          lastCheckInDate: todayKey(),
+          lastCheckInDate: today,
           checkInCount: day,
           dailyTaskDot: false,
+          deviceNewbie: { ...get().deviceNewbie, lastCheckInDate: today, checkInCount: day },
         });
       },
       claimRate: () => {
-        if (get().ratedUs) return;
+        if (get().ratedUs || get().deviceNewbie.ratedUs) return;
         get().addCoins(RATE_REWARD, "Rate Us");
-        set({ ratedUs: true });
+        set({ ratedUs: true, deviceNewbie: { ...get().deviceNewbie, ratedUs: true } });
       },
       claimWelcome: () => {
         cancelWelcomePop();
-        set({ seenWelcome: true, overlay: null });
+        set({
+          seenWelcome: true,
+          overlay: null,
+          deviceNewbie: { ...get().deviceNewbie, seenWelcome: true },
+        });
       },
       submitAppleSupport: () => set({ appleSupportSubmitted: true }),
       clearAppleSupport: () => set({ appleSupportSubmitted: false }),
@@ -777,9 +832,11 @@ export const useAppStore = create<AppState>()(
         paySeq += 1;
         cancelPendingIap();
         if (mode === "delete") {
+          const deviceNewbie = sealDeviceNewbie(get(), get().deviceNewbie);
           set({
             ...blankProgress(null),
             seenSplash: false,
+            deviceNewbie,
           });
           rememberInboxPeople({});
           void import("./sayHiStore").then((m) => m.resetSayHiSession());
@@ -806,6 +863,7 @@ export const useAppStore = create<AppState>()(
       partialize: (s) => ({
         userId: s.userId,
         accessToken: s.accessToken,
+        deviceNewbie: s.deviceNewbie,
         coins: s.coins,
         isVip: s.isVip,
         hasPaid: s.hasPaid,
@@ -861,6 +919,12 @@ export const useAppStore = create<AppState>()(
         if (typeof state.seenWelcome !== "boolean") {
           useAppStore.setState({ seenWelcome: Boolean(state.userId) });
         }
+        const newbie = normalizeDeviceNewbie(state.deviceNewbie, STARTING_COINS);
+        if (!newbie) {
+          useAppStore.setState({ deviceNewbie: inferDeviceNewbie(state, STARTING_COINS) });
+        } else if (newbie.starterLeft !== state.deviceNewbie.starterLeft) {
+          useAppStore.setState({ deviceNewbie: newbie });
+        }
         if (state.lastCheckInDate !== todayKey()) {
           useAppStore.setState({ dailyTaskDot: true });
         }
@@ -879,7 +943,7 @@ export const useAppStore = create<AppState>()(
           void loginH5User(state.userId);
         }
       },
-      version: 11,
+      version: 12,
       migrate: (persisted, fromVersion) => {
         const next = { ...(persisted as Record<string, unknown>) };
         if (fromVersion < 2) {
@@ -927,6 +991,9 @@ export const useAppStore = create<AppState>()(
         }
         if (fromVersion < 11) {
           next.accessToken = typeof next.accessToken === "string" ? next.accessToken : null;
+        }
+        if (fromVersion < 12) {
+          next.deviceNewbie = inferDeviceNewbie(next, STARTING_COINS);
         }
         return next as typeof persisted;
       },

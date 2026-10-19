@@ -12,6 +12,7 @@ import {
   RATE_REWARD,
   formatCallClock,
   resolveCheckIn,
+  todayKey,
   useAppStore,
   type OverlayId,
 } from "../store/appStore";
@@ -126,7 +127,7 @@ export function OverlayHost() {
           {shown === "confirmDelete" ? (
             <CenterCard
               title="Delete Account"
-              copy="This erases all progress on this device. You’ll start over from the splash screen."
+              copy="Chats, coins, and purchases on this device are erased. New-user perks you’ve already used won’t come back."
               cta="Delete"
               danger
               onCta={() => runAccountReset("delete")}
@@ -493,6 +494,25 @@ const WELCOME_PRIVILEGES = [
 
 function WelcomeCard() {
   const claimWelcome = useAppStore((s) => s.claimWelcome);
+  const starterLeft = useAppStore((s) => s.deviceNewbie.starterLeft);
+  const freeCallUsed = useAppStore((s) => s.deviceNewbie.lastFreeCallDate) === todayKey();
+  const privileges = WELCOME_PRIVILEGES.map((item) => {
+    if (item.title === "Free Messaging") {
+      return {
+        ...item,
+        copy:
+          starterLeft > 1
+            ? `Start with ${starterLeft} free messages.`
+            : starterLeft === 1
+              ? "Start with 1 free message."
+              : "Free messages already used.",
+      };
+    }
+    if (item.title === "Free Daily Call" && freeCallUsed) {
+      return { ...item, copy: "Today’s free call is already used." };
+    }
+    return item;
+  });
 
   return (
     <div className="overlay-card is-welcome" role="dialog" aria-labelledby="welcome-title">
@@ -510,7 +530,7 @@ function WelcomeCard() {
       </p>
       <p className="welcome-kicker">YOUR NEWBIE PRIVILEGES</p>
       <ul className="welcome-list">
-        {WELCOME_PRIVILEGES.map((item) => (
+        {privileges.map((item) => (
           <li key={item.title}>
             <span className="welcome-ico">
               <span className="icon-box" style={{ width: item.w, height: item.h }}>

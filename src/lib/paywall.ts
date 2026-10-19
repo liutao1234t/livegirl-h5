@@ -17,7 +17,9 @@ export function isReelLocked(index: number) {
 
 export function isDailyFreeCallAvailable(videoUrl?: string | null) {
   if (!isUsableVideoUrl(videoUrl)) return false;
-  return useAppStore.getState().lastFreeCallDate !== todayKey();
+  const { lastFreeCallDate, deviceNewbie } = useAppStore.getState();
+  const today = todayKey();
+  return lastFreeCallDate !== today && deviceNewbie.lastFreeCallDate !== today;
 }
 
 export function callRatePerMin(listRate: number) {

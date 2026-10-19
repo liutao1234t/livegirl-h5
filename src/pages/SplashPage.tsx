@@ -1,24 +1,45 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../store/appStore";
 import { FullscreenShell } from "../shells/Shells";
 import { publicUrl } from "../lib/publicUrl";
+import { armInlineVideo } from "../lib/media";
 
-const SPLASH_LOADING_MS = 1000;
+const SPLASH_LEAVE_MS = 400;
+const LANDING_POSTER = publicUrl("/images/splash-poster.jpg");
+const LANDING_VIDEO = publicUrl("/videos/landing.mp4");
 
 export function SplashPage() {
   const navigate = useNavigate();
   const startSession = useAppStore((s) => s.startSession);
   const [entering, setEntering] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    armInlineVideo(video);
+    video.loop = true;
+    video.preload = "auto";
+    const play = () => {
+      void video.play().catch(() => undefined);
+    };
+    play();
+    video.addEventListener("canplay", play);
+    video.addEventListener("loadeddata", play);
+    return () => {
+      video.removeEventListener("canplay", play);
+      video.removeEventListener("loadeddata", play);
+      video.pause();
+    };
+  }, []);
 
   useEffect(() => {
     if (!entering) return;
     let cancelled = false;
-    const started = Date.now();
     void (async () => {
-      await startSession();
-      const left = SPLASH_LOADING_MS - (Date.now() - started);
-      if (left > 0) await new Promise((r) => window.setTimeout(r, left));
+      const waitLeave = new Promise<void>((r) => window.setTimeout(r, SPLASH_LEAVE_MS));
+      await Promise.all([startSession(), waitLeave]);
       if (cancelled) return;
       navigate("/app/home", { replace: true });
     })();
@@ -29,52 +50,48 @@ export function SplashPage() {
 
   return (
     <FullscreenShell>
-      <div className="splash">
-        <div className="splash-bg">
-          <img src={publicUrl("/images/splash-bg.png")} alt="" />
+      <div className={`splash${entering ? " is-leaving" : ""}`}>
+        <div className="splash-bg" aria-hidden>
+          <img src={LANDING_POSTER} alt="" />
+          <video
+            ref={videoRef}
+            src={LANDING_VIDEO}
+            poster={LANDING_POSTER}
+            muted
+            playsInline
+            loop
+            autoPlay
+            preload="auto"
+            disablePictureInPicture
+            controls={false}
+          />
         </div>
+        <div className="splash-veil" aria-hidden />
         <div className="splash-body">
           <h1>
-            Connect with the
-            <br />
-            World
+            <span className="splash-copy splash-copy-1">
+              Connect with the
+              <br />
+              World
+            </span>
           </h1>
           <p className="lead">
-            Experience premium 1-on-1 video chats. Meet fascinating people in an exclusive, high-end digital LiveGirl designed for genuine connection.
-          </p>
-          <button
-            className="btn-primary press"
-            type="button"
-            disabled={entering}
-            aria-busy={entering}
-            onClick={() => setEntering(true)}
-          >
-            Get Started
-            <span className="icon-box" style={{ width: 16, height: 16 }}>
-              <img className="icon" src={publicUrl("/icons/arrow.svg")} alt="" />
+            <span className="splash-copy splash-copy-2">
+              Experience premium 1-on-1 video chats. Meet fascinating people in an exclusive, high-end digital LiveGirl designed for genuine connection.
             </span>
-          </button>
-          <p className="legal">
-            By continuing, you agree to our{" "}
-            <button type="button" onClick={() => navigate("/legal/terms")}>
-              Terms of Use
-            </button>
-            ,{" "}
-            <button type="button" onClick={() => navigate("/legal/privacy")}>
-              Privacy Policy
-            </button>
-            , and{" "}
-            <button type="button" onClick={() => navigate("/legal/license")}>
-              User License Agreement
-            </button>
-            .
           </p>
-        </div>
-        {entering ? (
-          <div className="splash-loading" role="status" aria-live="polite" aria-label="Loading">
-            <span className="pay-spinner" />
+          <div className="splash-cta">
+            <button
+              className="btn-primary press"
+              type="button"
+              disabled={entering}
+              aria-busy={entering}
+              onClick={() => setEntering(true)}
+            >
+              Continue
+            </button>
           </div>
-        ) : null}
+        </div>
       </div>
     </FullscreenShell>
   );

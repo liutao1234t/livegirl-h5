@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type AnimationEvent } from "react";
 import { useLocation, useNavigationType, type Location } from "react-router-dom";
 import { AppRoutes } from "./AppRoutes";
+import { rememberNavFrom } from "../store/incomingCallStore";
 import { decideNavAnim, HANGUP_EXIT_MS, shellKind, type NavAnim, type ShellKind } from "./navMotion";
 
 function useReducedMotion() {
@@ -56,6 +57,7 @@ export function NavStage() {
   useLayoutEffect(() => {
     const prev = locRef.current;
     if (prev.key === location.key) return;
+    rememberNavFrom(prev.pathname);
     locRef.current = location;
     const from = shellKind(prev.pathname);
     const to = shellKind(location.pathname);

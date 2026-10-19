@@ -36,6 +36,7 @@ let catalogStarted = false;
 let lastCountedId = "";
 let lastCountedAt = 0;
 let skipNextProfileViewId: string | null = null;
+let navFromPath = "";
 let presentSeq = 0;
 let presentLock = false;
 
@@ -176,13 +177,32 @@ export function ignoreNextProfileView(girlId: string) {
   skipNextProfileViewId = girlId;
 }
 
+export function rememberNavFrom(path: string) {
+  navFromPath = path;
+}
+
+function isReturnFromProfileChild(id: string, fromPath: string) {
+  if (!fromPath) return false;
+  return (
+    fromPath === `/chat/${id}` ||
+    fromPath === `/report/${id}` ||
+    fromPath === `/call/outgoing/${id}` ||
+    fromPath === `/call/incoming/${id}` ||
+    fromPath === `/call/in/${id}`
+  );
+}
+
 export function noteProfileView(girlId: string) {
   const id = girlId.trim();
   if (!id) return;
+  // Leaving panes stay mounted under chat/call; only the live profile route counts.
+  if (currentPath() !== `/profile/${id}`) return;
   if (skipNextProfileViewId === id) {
     skipNextProfileViewId = null;
     return;
   }
+  // Back from chat / call / report onto this profile is not a new view.
+  if (isReturnFromProfileChild(id, navFromPath)) return;
   const now = Date.now();
   if (id === lastCountedId && now - lastCountedAt < 800) return;
   lastCountedId = id;
@@ -232,6 +252,7 @@ export function resetIncomingCallSession() {
   lastCountedId = "";
   lastCountedAt = 0;
   skipNextProfileViewId = null;
+  navFromPath = "";
   setSkipIncomingExit(true);
   setIncomingOpen(false);
   useIncomingCallStore.setState({ ringingGirlId: null });
