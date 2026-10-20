@@ -218,9 +218,8 @@ export function noteHostReply(girlId: string) {
   const id = girlId.trim();
   if (!id) return;
   const thread = useAppStore.getState().threads[id] ?? [];
-  const hasHostMsg = thread.some((m) => m.from === "them");
   const delivered = thread.filter((m) => m.from === "me" && m.status !== "fail").length;
-  if (!hasHostMsg || delivered !== 1) return;
+  if (delivered !== 1) return;
   scheduleRing();
 }
 
