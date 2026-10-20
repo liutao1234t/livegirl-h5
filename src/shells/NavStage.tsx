@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type AnimationEvent } from "react";
 import { useLocation, useNavigationType, type Location } from "react-router-dom";
 import { AppRoutes } from "./AppRoutes";
-import { rememberNavFrom } from "../store/incomingCallStore";
+import { rememberNavFrom, syncRouterPath } from "../store/incomingCallStore";
 import { decideNavAnim, HANGUP_EXIT_MS, shellKind, type NavAnim, type ShellKind } from "./navMotion";
 
 function useReducedMotion() {
@@ -21,6 +21,7 @@ function paneClass(kind: ShellKind, extras: string[]) {
 
 export function NavStage() {
   const location = useLocation();
+  syncRouterPath(location.pathname);
   const navType = useNavigationType();
   const reduceMotion = useReducedMotion();
   const locRef = useRef(location);

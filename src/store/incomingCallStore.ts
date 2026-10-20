@@ -71,9 +71,25 @@ function waitForPhoto(src: string) {
   });
 }
 
+let routerPath = "";
+
+export function syncRouterPath(path: string) {
+  routerPath = path;
+}
+
+function stripBasename(pathname: string) {
+  const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+  if (base && pathname.startsWith(base)) {
+    const rest = pathname.slice(base.length);
+    return rest.startsWith("/") ? rest : `/${rest}`;
+  }
+  return pathname;
+}
+
 function currentPath() {
+  if (routerPath) return routerPath;
   if (typeof window === "undefined") return "";
-  return window.location.pathname;
+  return stripBasename(window.location.pathname);
 }
 
 function canPresentNow() {
@@ -141,7 +157,7 @@ async function ringNow() {
   }
   const host = pickUnusedHost();
   if (!host) {
-    pendingRing = false;
+    pendingRing = true;
     return false;
   }
   await presentIncoming(host);
@@ -270,6 +286,7 @@ export function debugRingIncoming() {
 
 export function IncomingCallGate() {
   const location = useLocation();
+  syncRouterPath(location.pathname);
 
   useEffect(() => {
     if (location.pathname.startsWith("/call/") || location.pathname === "/") return;

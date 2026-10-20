@@ -20,8 +20,8 @@ export function ProfilePage() {
   const [phase, setPhase] = useState<"in" | "out">("in");
 
   useEffect(() => {
-    noteProfileView(girl.id);
-  }, [girl.id]);
+    noteProfileView(id);
+  }, [id]);
 
   useEffect(() => {
     if (preview) {
