@@ -509,34 +509,34 @@ export const useAppStore = create<AppState>()(
         if (startSessionJob) return startSessionJob;
         startSessionJob = (async () => {
           const existingId = get().userId;
-          const login = await loginH5User(existingId);
-          const userId = existingId || login?.userId || newUserId();
-          const accessToken = login?.accessToken ?? get().accessToken ?? null;
-          const registeredAt =
-            login?.createdAtMs ?? get().registeredAt ?? resolveRegisteredAt(userId);
-
           if (!existingId) {
+            const localId = newUserId();
             cancelHostReplies();
             set({
-              ...applyDeviceNewbie(userId, get().deviceNewbie),
-              accessToken,
-              registeredAt,
+              ...applyDeviceNewbie(localId, get().deviceNewbie),
               seenSplash: true,
             });
             rememberInboxPeople({});
             void import("./sayHiStore").then((m) => m.resetSayHiSession());
             void import("./incomingCallStore").then((m) => m.resetIncomingCallSession());
+            const login = await loginH5User(null);
+            const userId = login?.userId || localId;
+            set({
+              userId,
+              accessToken: login?.accessToken ?? null,
+              registeredAt: login?.createdAtMs ?? resolveRegisteredAt(userId),
+            });
             void import("../lib/firebase").then((m) =>
               m.bindLocalUser(userId, login?.isNewUser !== false),
             );
             return;
           }
 
+          set({ seenSplash: true });
+          const login = await loginH5User(existingId);
           set({
-            seenSplash: true,
-            userId,
-            accessToken,
-            registeredAt,
+            accessToken: login?.accessToken ?? get().accessToken ?? null,
+            registeredAt: login?.createdAtMs ?? get().registeredAt ?? resolveRegisteredAt(existingId),
           });
         })().finally(() => {
           startSessionJob = null;

@@ -822,11 +822,11 @@ html.is-keyboard .tab-bar {
 .splash-bg {
   position: absolute;
   inset: 0;
-  transition: transform var(--dur-sheet) var(--ease);
 }
 
 .splash-bg img,
-.splash-bg video {
+.splash-bg video,
+.splash-clip {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -835,14 +835,21 @@ html.is-keyboard .tab-bar {
   pointer-events: none;
 }
 
+.splash-clip {
+  opacity: 0;
+  transition: opacity var(--dur-micro) var(--ease);
+}
+
+.splash-bg.is-live .splash-clip {
+  opacity: 1;
+}
+
 .splash-bg::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 1;
   background: rgba(35, 12, 18, 0.2);
-  backdrop-filter: blur(1px);
-  -webkit-backdrop-filter: blur(1px);
 }
 
 .splash-bg::after {
@@ -862,16 +869,6 @@ html.is-keyboard .tab-bar {
   justify-content: flex-end;
   align-items: stretch;
   padding: 0 20px max(40px, env(safe-area-inset-bottom));
-}
-
-.splash-veil {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: #230c12;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--dur-sheet) var(--ease);
 }
 
 .splash-copy,
@@ -898,38 +895,6 @@ html.is-keyboard .tab-bar {
   animation-delay: 240ms;
 }
 
-.splash.is-leaving {
-  pointer-events: none;
-}
-
-.splash.is-leaving .splash-copy,
-.splash.is-leaving .splash-cta {
-  animation-name: splash-lift;
-  animation-duration: 300ms;
-  animation-timing-function: var(--ease);
-  animation-fill-mode: both;
-}
-
-.splash.is-leaving .splash-cta {
-  animation-delay: 0ms;
-}
-
-.splash.is-leaving .splash-copy-2 {
-  animation-delay: 40ms;
-}
-
-.splash.is-leaving .splash-copy-1 {
-  animation-delay: 80ms;
-}
-
-.splash.is-leaving .splash-bg {
-  transform: scale(1.06);
-}
-
-.splash.is-leaving .splash-veil {
-  opacity: 0.72;
-}
-
 @keyframes splash-rise {
   from {
     opacity: 0;
@@ -938,17 +903,6 @@ html.is-keyboard .tab-bar {
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
-  }
-}
-
-@keyframes splash-lift {
-  from {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    opacity: 0;
-    transform: translate3d(0, -14px, 0);
   }
 }
 
@@ -5865,13 +5819,8 @@ html.is-keyboard .sup-composer {
     animation-duration: 1ms;
   }
 
-  .splash-bg,
-  .splash-veil {
+  .splash-clip {
     transition: none;
-  }
-
-  .splash.is-leaving .splash-bg {
-    transform: none;
   }
 
   .online-ring.is-live::before {
