@@ -15,12 +15,14 @@ export type CoinPack = {
   badge?: string;
   badgeTone?: "wine" | "mid";
   best?: boolean;
+  /** Keep the pack in data, but do not show it in the coin shop. */
+  hidden?: boolean;
 };
 
 export const NEWBIE_COINS = 150;
 
 export const coinPacks: CoinPack[] = [
-  { id: "p1", productId: "com.user2.99.normal", col: 1, coins: 150, price: "$2.99" },
+  { id: "p1", productId: "com.user2.99.normal", col: 1, coins: 150, price: "$2.99", hidden: true },
   { id: "p4", productId: "com.user8.99.normal", col: 2, coins: 600, price: "$8.99" },
   { id: "p5", productId: "com.user19.99.normal", col: 1, coins: 1250, price: "$19.99", bonus: 100, glow: true, glowLit: true, lg: true, badge: "56% User Take" },
   { id: "p8", productId: "com.user49.99.normal", col: 2, coins: 3050, price: "$49.99", bonus: 300, glow: true, lg: true, shine: true, badge: "22% User Take", badgeTone: "mid" },

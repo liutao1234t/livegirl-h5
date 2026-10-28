@@ -7,8 +7,9 @@ export function CoinPackGrid() {
   const payBusy = useAppStore((s) => s.payBusy);
   const buyCoins = useAppStore((s) => s.buyCoins);
   const startPurchase = useAppStore((s) => s.startPurchase);
-  const left = coinPacks.filter((p) => p.col === 1);
-  const right = coinPacks.filter((p) => p.col === 2);
+  const shown = coinPacks.filter((p) => !p.hidden);
+  const left = shown.filter((p) => p.col === 1);
+  const right = shown.filter((p) => p.col === 2);
 
   const onBuy = (pack: CoinPack) => {
     if (payBusy) return;
