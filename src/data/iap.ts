@@ -2,6 +2,7 @@
 export const IAP_PRODUCTS = {
   "com.user1.99.normal": { productId: "com.user1.99.normal", price: "1.99" },
   "com.user2.99.normal": { productId: "com.user2.99.normal", price: "2.99" },
+  "com.user4.99.normal": { productId: "com.user4.99.normal", price: "4.99" },
   "com.user8.99.normal": { productId: "com.user8.99.normal", price: "8.99" },
   "com.user19.99.normal": { productId: "com.user19.99.normal", price: "19.99" },
   "com.user25.99.normal": { productId: "com.user25.99.normal", price: "25.99" },
