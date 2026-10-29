@@ -526,9 +526,6 @@ export const useAppStore = create<AppState>()(
               accessToken: login?.accessToken ?? null,
               registeredAt: login?.createdAtMs ?? resolveRegisteredAt(userId),
             });
-            void import("../lib/firebase").then((m) =>
-              m.bindLocalUser(userId, login?.isNewUser !== false),
-            );
             return;
           }
 
@@ -841,7 +838,6 @@ export const useAppStore = create<AppState>()(
           rememberInboxPeople({});
           void import("./sayHiStore").then((m) => m.resetSayHiSession());
           void import("./incomingCallStore").then((m) => m.resetIncomingCallSession());
-          void import("../lib/firebase").then((m) => m.clearFirebaseUser());
           return;
         }
         set({
@@ -939,7 +935,6 @@ export const useAppStore = create<AppState>()(
           useAppStore.setState({ viewedHostIds: [] });
         }
         if (state.userId) {
-          void import("../lib/firebase").then((m) => m.bindLocalUser(state.userId as string, false));
           void loginH5User(state.userId);
         }
       },

@@ -1,5 +1,4 @@
 import { type IapRequest } from "../data/iap";
-import { logAppEvent } from "./firebase";
 import { postToNative } from "./nativeBridge";
 
 /** WKScriptMessageHandler name. Swift: `userContentController.add(self, name: "iap")`. */
@@ -115,7 +114,6 @@ export function iapFailToast(reason?: string): string {
 }
 
 function settle(ok: boolean, reason?: string) {
-  const simulated = simulateTimer != null;
   if (simulateTimer != null) {
     window.clearTimeout(simulateTimer);
     simulateTimer = undefined;
@@ -123,14 +121,6 @@ function settle(ok: boolean, reason?: string) {
   const current = pending;
   pending = null;
   if (!current) return;
-  logAppEvent("iap_result", {
-    productId: current.request.productId,
-    price: current.request.price,
-    type: current.request.type,
-    success: ok,
-    reason: reason ?? "",
-    simulated,
-  });
   current.resolve({ ok, reason });
 }
 
@@ -162,11 +152,6 @@ export function requestIap(request: IapRequest): Promise<IapOutcome> {
   if (pending) return Promise.resolve({ ok: false, reason: "busy" });
 
   publishFields(request);
-  logAppEvent("iap_start", {
-    productId: request.productId,
-    price: request.price,
-    type: request.type,
-  });
 
   return new Promise((resolve) => {
     pending = { request, resolve };
