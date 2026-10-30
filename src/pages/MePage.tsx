@@ -10,6 +10,7 @@ export function MePage() {
   const favorites = useAppStore((s) => s.favorites);
   const dailyTaskDot = useAppStore((s) => s.dailyTaskDot);
   const ratedUs = useAppStore((s) => s.ratedUs);
+  const isVip = useAppStore((s) => s.isVip);
   const nickname = useAppStore((s) => s.profile.nickname);
   const userId = useAppStore((s) => s.userId);
   const openOverlay = useAppStore((s) => s.openOverlay);
@@ -57,33 +58,49 @@ export function MePage() {
         </div>
       </div>
 
-      <button className="me-row press" type="button" onClick={() => navigate("/vip")}>
-        <span className="me-ico teal">
-          <span className="icon-box" style={{ width: 20, height: 18 }}>
-            <img className="icon" src={publicUrl("/icons/vip.svg")} alt="" />
+      <section className={`me-spotlight ${isVip ? "is-on" : ""}`} aria-label="VIP Center">
+        <div className="me-spotlight-head">
+          <h3>
+            <span className="icon-box" style={{ width: 16.0417, height: 14.25 }}>
+              <img className="icon" src={publicUrl("/icons/vip-diamond.svg")} alt="" />
+            </span>
+            VIP Center
+          </h3>
+          <span className="me-spotlight-badge">{isVip ? "Active" : "Premium"}</span>
+        </div>
+        <p>{isVip ? "Your premium privileges are unlocked" : "Unlock exclusive benefits and privileges"}</p>
+        <button className={`me-spotlight-cta press ${isVip ? "is-quiet" : ""}`} type="button" onClick={() => navigate("/vip")}>
+          {isVip ? "View Benefits" : "Explore VIP"}
+        </button>
+      </section>
+
+      <section className={`me-rate ${ratedUs ? "is-done" : ""}`} aria-label="Rate Us">
+        <div className="me-rate-head">
+          <h3>{ratedUs ? "Thanks for Rating" : "Enjoying the App?"}</h3>
+          <span className="me-rate-stars" aria-hidden>
+            {Array.from({ length: 5 }, (_, i) => (
+              <span key={i} className="icon-box" style={{ width: 15, height: 14.25 }}>
+                <img className="icon" src={publicUrl("/icons/rate-star.svg")} alt="" />
+              </span>
+            ))}
           </span>
-        </span>
-        <span>VIP Center</span>
-        <span className="icon-box chevron" style={{ width: 8, height: 12 }}>
-          <img className="icon" src={publicUrl("/icons/chevron.svg")} alt="" />
-        </span>
-      </button>
+        </div>
+        <div className="me-rate-body">
+          <p>
+            Your feedback means a lot to us
+            <small>{ratedUs ? `${RATE_REWARD} Coins added` : `+${RATE_REWARD} Coins reward`}</small>
+          </p>
+          <button
+            className={`me-rate-cta press ${ratedUs ? "is-quiet" : ""}`}
+            type="button"
+            onClick={() => openOverlay("rateUs")}
+          >
+            {ratedUs ? "Rated" : "Rate Now"}
+          </button>
+        </div>
+      </section>
 
       <div className="me-group">
-        <button className="me-row press" type="button" onClick={() => openOverlay("rateUs")}>
-          <span className="me-ico">
-            <span className="icon-box" style={{ width: 20, height: 19 }}>
-              <img className="icon" src={publicUrl("/icons/rate.svg")} alt="" />
-            </span>
-          </span>
-          <span>
-            Rate Us
-            <small>{ratedUs ? "Claimed" : `+${RATE_REWARD} Coins`}</small>
-          </span>
-          <span className="icon-box chevron" style={{ width: 8, height: 12 }}>
-            <img className="icon" src={publicUrl("/icons/chevron.svg")} alt="" />
-          </span>
-        </button>
         <button className="me-row press" type="button" onClick={() => openOverlay("dailyTask")}>
           <span className="me-ico">
             <span className="icon-box" style={{ width: 20, height: 20 }}>
