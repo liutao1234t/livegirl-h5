@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { IAP_VIP } from "../data/iap";
+import { vipIap } from "../data/iap";
 import { StackBar } from "../shells/StackBar";
 import { StackShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
@@ -35,7 +35,7 @@ export function VipPage() {
             disabled={isVip || payBusy}
             onClick={() => {
               if (isVip || payBusy) return;
-              startPurchase(IAP_VIP, () => {
+              startPurchase(vipIap(), () => {
                 buyVip();
                 navigate(-1);
               });

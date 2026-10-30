@@ -13,7 +13,7 @@ export function CoinPackGrid() {
 
   const onBuy = (pack: CoinPack) => {
     if (payBusy) return;
-    startPurchase(coinsIap(pack.productId), () => {
+    startPurchase(coinsIap(pack.slot), () => {
       buyCoins(pack.coins + (pack.bonus ?? 0), "Coins Added");
     });
   };

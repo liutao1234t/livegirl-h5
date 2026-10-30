@@ -23,7 +23,7 @@ let simulateTimer: number | undefined;
  * WKWebView contract
  *
  * H5 → Swift (`webkit.messageHandlers.iap.postMessage`):
- *   { productId: "com.user19.99.normal" }
+ *   { productId: "<storekit id for this app and tier>" }
  *
  * Readable field (updated when a purchase starts):
  *   window.iapProductId
@@ -33,8 +33,8 @@ let simulateTimer: number | undefined;
  *   window.onIAPFail({ reason: "product_not_found" })
  *   window.onIAPResult({ success: true })
  *
- * Type stays on the H5 pending click. com.user19.99.normal is coins or 3-day;
- * com.user25.99.normal is coins or VIP.
+ * Type stays on the H5 pending click. The $19.99 id is coins or 3-day;
+ * the $25.99 id is coins or VIP. Which string is sent depends on appid.
  */
 function nativeWindow() {
   return window as Window & {

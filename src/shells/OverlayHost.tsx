@@ -1,9 +1,9 @@
 import { useEffect, useState, type AnimationEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { getGirl } from "../data/girls";
-import { IAP_NEWBIE, IAP_REWARD3 } from "../data/iap";
+import { newbieIap, reward3Iap } from "../data/iap";
 import { gifts } from "../data/shop";
-import { APP_STORE_REVIEW_URL } from "../lib/nativeShare";
+import { appStoreReviewUrl } from "../lib/nativeShare";
 import { openCoinShop } from "../lib/paywall";
 import { CoinPackGrid } from "../pages/CoinPacks";
 import {
@@ -562,7 +562,7 @@ function Reward3Card() {
 
   const onBuy = () => {
     if (payBusy) return;
-    startPurchase(IAP_REWARD3, () => {
+    startPurchase(reward3Iap(), () => {
       buyReward3();
       close();
     });
@@ -612,7 +612,7 @@ function PromoCard() {
       navigate("/coins");
       return;
     }
-    startPurchase(IAP_NEWBIE, () => {
+    startPurchase(newbieIap(), () => {
       buyNewbieOffer();
       close();
     });
@@ -771,7 +771,7 @@ function RateCard() {
           <>
             <a
               className="btn-primary press"
-              href={APP_STORE_REVIEW_URL}
+              href={appStoreReviewUrl()}
               onClick={() => {
                 window.setTimeout(() => useAppStore.getState().claimRate(), 400);
               }}

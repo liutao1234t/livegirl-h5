@@ -1,8 +1,13 @@
+import { h5AppleAppId } from "../data/appClient";
 import { useAppStore } from "../store/appStore";
 
-export const APP_STORE_URL = "https://apps.apple.com/app/id6758287054";
-export const APP_STORE_REVIEW_URL =
-  "https://itunes.apple.com/app/id6758287054?mt=8&action=write-review";
+export function appStoreUrl() {
+  return `https://apps.apple.com/app/id${h5AppleAppId()}`;
+}
+
+export function appStoreReviewUrl() {
+  return `https://itunes.apple.com/app/id${h5AppleAppId()}?mt=8&action=write-review`;
+}
 
 function isShareAbort(err: unknown) {
   return err instanceof DOMException && err.name === "AbortError";
@@ -10,7 +15,7 @@ function isShareAbort(err: unknown) {
 
 async function copyAppLink() {
   try {
-    await navigator.clipboard.writeText(APP_STORE_URL);
+    await navigator.clipboard.writeText(appStoreUrl());
     useAppStore.getState().showToast("Link copied");
   } catch {
     /* still usable without a share target */
@@ -20,7 +25,7 @@ async function copyAppLink() {
 /** WKWebView / Safari: Web Share API → system share sheet. Needs a secure context. */
 export function shareAppDownload() {
   if (typeof navigator.share === "function") {
-    void navigator.share({ title: "LiveGirl", url: APP_STORE_URL }).catch((err) => {
+    void navigator.share({ title: "LiveGirl", url: appStoreUrl() }).catch((err) => {
       if (isShareAbort(err)) return;
       void copyAppLink();
     });

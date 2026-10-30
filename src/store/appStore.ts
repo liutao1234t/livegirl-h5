@@ -12,7 +12,7 @@ import {
 import { type ChatMsg } from "../data/messages";
 import type { IapRequest } from "../data/iap";
 import { gifts, NEWBIE_COINS } from "../data/shop";
-import { loginH5User, reportH5Purchase } from "../data/h5AccountRepo";
+import { loginH5User, reportH5CoinChange, reportH5Purchase, reportH5RateStatus } from "../data/h5AccountRepo";
 import {
   consumeStarter,
   freshDeviceNewbie,
@@ -311,6 +311,18 @@ let toastTimer: number | undefined;
 let paySeq = 0;
 let giftFxSeq = 0;
 let startSessionJob: Promise<void> | null = null;
+let coinReportArmed = false;
+let holdCoinReport = false;
+
+function publishCoinRemain(userId: string | null, remaincoin: number) {
+  if (!userId) return;
+  reportH5CoinChange({ userid: userId, remaincoin });
+}
+
+function publishRateStatus(userId: string | null) {
+  if (!userId) return;
+  reportH5RateStatus({ userid: userId, ratestatus: 1 });
+}
 
 function cancelHostReplies() {
   for (const id of Object.keys(hostReplyJob)) delete hostReplyJob[id];
@@ -511,21 +523,28 @@ export const useAppStore = create<AppState>()(
           const existingId = get().userId;
           if (!existingId) {
             const localId = newUserId();
-            cancelHostReplies();
-            set({
-              ...applyDeviceNewbie(localId, get().deviceNewbie),
-              seenSplash: true,
-            });
-            rememberInboxPeople({});
-            void import("./sayHiStore").then((m) => m.resetSayHiSession());
-            void import("./incomingCallStore").then((m) => m.resetIncomingCallSession());
-            const login = await loginH5User(null);
-            const userId = login?.userId || localId;
-            set({
-              userId,
-              accessToken: login?.accessToken ?? null,
-              registeredAt: login?.createdAtMs ?? resolveRegisteredAt(userId),
-            });
+            const coinsBefore = get().coins;
+            holdCoinReport = true;
+            try {
+              cancelHostReplies();
+              set({
+                ...applyDeviceNewbie(localId, get().deviceNewbie),
+                seenSplash: true,
+              });
+              rememberInboxPeople({});
+              void import("./sayHiStore").then((m) => m.resetSayHiSession());
+              void import("./incomingCallStore").then((m) => m.resetIncomingCallSession());
+              const login = await loginH5User(null);
+              const userId = login?.userId || localId;
+              set({
+                userId,
+                accessToken: login?.accessToken ?? null,
+                registeredAt: login?.createdAtMs ?? resolveRegisteredAt(userId),
+              });
+              if (get().coins !== coinsBefore) publishCoinRemain(userId, get().coins);
+            } finally {
+              holdCoinReport = false;
+            }
             return;
           }
 
@@ -810,6 +829,7 @@ export const useAppStore = create<AppState>()(
         if (get().ratedUs || get().deviceNewbie.ratedUs) return;
         get().addCoins(RATE_REWARD, "Rate Us");
         set({ ratedUs: true, deviceNewbie: { ...get().deviceNewbie, ratedUs: true } });
+        publishRateStatus(get().userId);
       },
       claimWelcome: () => {
         cancelWelcomePop();
@@ -887,7 +907,10 @@ export const useAppStore = create<AppState>()(
         supportMessages: s.supportMessages,
       }),
       onRehydrateStorage: () => (state) => {
-        if (!state) return;
+        if (!state) {
+          coinReportArmed = true;
+          return;
+        }
         if (!Array.isArray(state.followedIds)) {
           useAppStore.setState({ followedIds: [] });
         }
@@ -937,6 +960,7 @@ export const useAppStore = create<AppState>()(
         if (state.userId) {
           void loginH5User(state.userId);
         }
+        coinReportArmed = true;
       },
       version: 12,
       migrate: (persisted, fromVersion) => {
@@ -995,3 +1019,9 @@ export const useAppStore = create<AppState>()(
     },
   ),
 );
+
+useAppStore.subscribe((state, prev) => {
+  if (!coinReportArmed || holdCoinReport) return;
+  if (state.coins === prev.coins) return;
+  publishCoinRemain(state.userId || prev.userId, state.coins);
+});
