@@ -7,22 +7,32 @@ import { LANDING_POSTER, mountLandingVideo } from "../lib/landingMedia";
 export function SplashPage() {
   const navigate = useNavigate();
   const startSession = useAppStore((s) => s.startSession);
+  const seenSplash = useAppStore((s) => s.seenSplash);
+  const livehubReturn = new URLSearchParams(window.location.search).get("livehub") === "1";
   const [leaving, setLeaving] = useState(false);
   const [live, setLive] = useState(false);
   const bgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!seenSplash || !livehubReturn) return;
+    void startSession();
+    navigate("/app/home?livehub=1", { replace: true });
+  }, [seenSplash, livehubReturn, navigate, startSession]);
+
+  useEffect(() => {
     const host = bgRef.current;
-    if (!host) return;
+    if (!host || (seenSplash && livehubReturn)) return;
     return mountLandingVideo(host, () => setLive(true));
-  }, []);
+  }, [seenSplash, livehubReturn]);
 
   const onContinue = () => {
     if (leaving) return;
     setLeaving(true);
     void startSession();
-    navigate("/app/home", { replace: true });
+    navigate(livehubReturn ? "/app/home?livehub=1" : "/app/home", { replace: true });
   };
+
+  if (seenSplash && livehubReturn) return null;
 
   return (
     <FullscreenShell>
