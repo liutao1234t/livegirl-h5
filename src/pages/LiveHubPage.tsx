@@ -5,7 +5,7 @@ import { publicUrl } from "../lib/publicUrl";
 import { FullscreenShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 
-const LIVE_HUB_URL = "https://chaturbate.com/";
+const LIVE_HUB_URL = "https://m.livejasmin.com/";
 const BROWSE_MS = 30_000;
 const FAB = 70;
 
