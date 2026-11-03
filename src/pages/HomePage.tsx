@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { type Girl } from "../data/girls";
 import { excludeCalled } from "../lib/calledHosts";
 import { tryDial } from "../lib/paywall";
-import { LiveHubFab } from "./LiveHubPage";
 import { OfferGiftButton, TabShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { useHostsStore } from "../store/hostsStore";
@@ -161,7 +160,6 @@ export function HomePage() {
           ))}
         </div>
       </TabShell>
-      <LiveHubFab />
     </div>
   );
 }
