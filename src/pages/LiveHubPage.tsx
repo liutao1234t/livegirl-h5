@@ -9,7 +9,36 @@ const LIVE_HUB_URL = "https://chaturbate.com/";
 const BROWSE_MS = 30_000;
 const FAB = 70;
 
+let browseWindow: Window | null = null;
 let browseStartedAt = 0;
+
+function liveHubHomeUrl(unlock: boolean) {
+  const url = new URL(`${import.meta.env.BASE_URL}app/home`, window.location.origin);
+  if (unlock) url.searchParams.set("livehub", "1");
+  return url.href;
+}
+
+function openLiveHubSite() {
+  browseStartedAt = performance.now();
+  const opened = window.open(LIVE_HUB_URL, "_blank");
+  browseWindow = opened && opened !== window ? opened : null;
+  return browseWindow;
+}
+
+function returnOpenedSite(unlock: boolean) {
+  const win = browseWindow;
+  browseWindow = null;
+  if (!win || win.closed) return;
+  try {
+    win.location.replace(liveHubHomeUrl(unlock));
+  } catch {
+    try {
+      win.close();
+    } catch {
+      /* 跨站窗口关不掉时，用户仍留在 Chaturbate */
+    }
+  }
+}
 
 const benefits = [
   { mark: "∞", text: "Unlimited live viewing" },
@@ -98,7 +127,14 @@ export function LiveHubFab() {
     const moved = drag.current.moved;
     drag.current.pointerId = -1;
     setDragging(false);
-    if (!moved) navigate("/live-hub");
+    if (!moved) {
+      const opened = openLiveHubSite();
+      if (!opened) {
+        window.location.assign(LIVE_HUB_URL);
+        return;
+      }
+      navigate("/live-hub");
+    }
   };
 
   return (
@@ -120,11 +156,13 @@ export function LiveHubFab() {
 export function LiveHubPage() {
   const navigate = useNavigate();
   const gone = useRef(false);
+  const [left, setLeft] = useState(30);
 
   const leave = (unlock: boolean) => {
     if (gone.current) return;
     gone.current = true;
     browseStartedAt = 0;
+    returnOpenedSite(unlock);
     if (unlock && !useAppStore.getState().liveHubUnlocked) {
       useAppStore.getState().openOverlay("livehub");
     }
@@ -137,6 +175,7 @@ export function LiveHubPage() {
     if (!browseStartedAt) browseStartedAt = performance.now();
     const id = window.setInterval(() => {
       const remain = Math.max(0, Math.ceil((BROWSE_MS - (performance.now() - browseStartedAt)) / 1000));
+      setLeft(remain);
       if (remain > 0) return;
       window.clearInterval(id);
       leave(true);
@@ -146,9 +185,9 @@ export function LiveHubPage() {
 
   return (
     <FullscreenShell>
-      <div className="livehub-browser">
-        <iframe className="livehub-frame" src={LIVE_HUB_URL} title="Live Hub" />
-        <div className="livehub-edge" {...swipe} />
+      <div className="livehub-wait" {...swipe}>
+        <strong>{left}</strong>
+        <p>秒后回到 LiveGirl</p>
       </div>
     </FullscreenShell>
   );

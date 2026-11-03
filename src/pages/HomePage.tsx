@@ -87,6 +87,12 @@ export function HomePage() {
   }, [refreshHosts]);
 
   useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("livehub") === "1") {
+      url.searchParams.delete("livehub");
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+      if (!useAppStore.getState().liveHubUnlocked) useAppStore.getState().openOverlay("livehub");
+    }
     useAppStore.getState().offerWelcomeIfNeeded();
     useAppStore.getState().offerReward3IfDue();
   }, []);
