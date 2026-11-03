@@ -9,8 +9,11 @@ const LIVE_HUB_URL = "https://chaturbate.com/";
 const BROWSE_MS = 30_000;
 const FAB = 70;
 
+const RETURN_KEY = "livehub-until";
+
 let browseWindow: Window | null = null;
 let browseStartedAt = 0;
+let keepAlive: { ctx: AudioContext; osc: OscillatorNode } | null = null;
 
 function liveHubHomeUrl(unlock: boolean) {
   const url = new URL(`${import.meta.env.BASE_URL}app/home`, window.location.origin);
@@ -18,14 +21,84 @@ function liveHubHomeUrl(unlock: boolean) {
   return url.href;
 }
 
+function rememberReturnDeadline() {
+  sessionStorage.setItem(RETURN_KEY, String(Date.now() + BROWSE_MS));
+}
+
+export function consumeLiveHubReturn() {
+  const raw = sessionStorage.getItem(RETURN_KEY);
+  if (!raw) return;
+  sessionStorage.removeItem(RETURN_KEY);
+  const until = Number(raw);
+  if (!Number.isFinite(until) || Date.now() < until) return;
+  if (!useAppStore.getState().liveHubUnlocked) useAppStore.getState().openOverlay("livehub");
+}
+
+function unlockDocumentScroll() {
+  const html = document.documentElement;
+  const body = document.body;
+  const prevHtml = html.getAttribute("style");
+  const prevBody = body.getAttribute("style");
+  html.style.setProperty("position", "static", "important");
+  html.style.setProperty("overflow", "auto", "important");
+  html.style.setProperty("height", "auto", "important");
+  body.style.setProperty("position", "static", "important");
+  body.style.setProperty("overflow", "visible", "important");
+  body.style.setProperty("height", "auto", "important");
+  void html.offsetHeight;
+  return () => {
+    if (prevHtml == null) html.removeAttribute("style");
+    else html.setAttribute("style", prevHtml);
+    if (prevBody == null) body.removeAttribute("style");
+    else body.setAttribute("style", prevBody);
+  };
+}
+
+function startKeepAlive() {
+  if (keepAlive) return;
+  const Ctx = window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!Ctx) return;
+  const ctx = new Ctx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  gain.gain.value = 0.0008;
+  osc.frequency.value = 18000;
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  void ctx.resume();
+  keepAlive = { ctx, osc };
+}
+
+function stopKeepAlive() {
+  const current = keepAlive;
+  keepAlive = null;
+  if (!current) return;
+  try {
+    current.osc.stop();
+  } catch {
+    /* already stopped */
+  }
+  void current.ctx.close();
+}
+
 function openLiveHubSite() {
   browseStartedAt = performance.now();
+  rememberReturnDeadline();
+  startKeepAlive();
+  const restore = unlockDocumentScroll();
   const opened = window.open(LIVE_HUB_URL, "_blank");
+  restore();
   browseWindow = opened && opened !== window ? opened : null;
+  if (!browseWindow) {
+    stopKeepAlive();
+    window.location.assign(LIVE_HUB_URL);
+  }
   return browseWindow;
 }
 
 function returnOpenedSite(unlock: boolean) {
+  stopKeepAlive();
   const win = browseWindow;
   browseWindow = null;
   if (!win || win.closed) return;
@@ -129,11 +202,7 @@ export function LiveHubFab() {
     setDragging(false);
     if (!moved) {
       const opened = openLiveHubSite();
-      if (!opened) {
-        window.location.assign(LIVE_HUB_URL);
-        return;
-      }
-      navigate("/live-hub");
+      if (opened) navigate("/live-hub");
     }
   };
 
