@@ -6363,7 +6363,6 @@ html.is-keyboard .sup-composer {
   gap: 8px;
   background: var(--bg);
   color: var(--text);
-  touch-action: pan-y;
 }
 
 .livehub-wait strong {
@@ -6436,7 +6435,6 @@ html.is-keyboard .sup-composer {
   overflow: auto;
   padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
   background: linear-gradient(157deg, var(--bg-wine) 0%, #000 39.5%, #000 100%);
-  touch-action: pan-y;
 }
 
 .livehub-back,
