@@ -7,6 +7,7 @@ import { ChatPage } from "../pages/ChatPage";
 import { CoinsPage } from "../pages/CoinsPage";
 import { EditProfilePage } from "../pages/EditProfilePage";
 import { HomePage } from "../pages/HomePage";
+import { LiveHubPage } from "../pages/LiveHubPage";
 import { LegalPage } from "../pages/LegalPage";
 import { MePage } from "../pages/MePage";
 import { MessagesPage } from "../pages/MessagesPage";
@@ -68,6 +69,14 @@ export function AppRoutes({ location }: { location: Location }) {
         element={
           <Gate>
             <MePage />
+          </Gate>
+        }
+      />
+      <Route
+        path="/live-hub"
+        element={
+          <Gate>
+            <LiveHubPage />
           </Gate>
         }
       />

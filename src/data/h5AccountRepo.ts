@@ -8,6 +8,7 @@
  */
 
 import { h5AppClient } from "./appClient";
+import type { IapType } from "./iap";
 
 const DEFAULT_H5_API_BASE = "https://huinongyunchuang.cn";
 const LOGIN_TIMEOUT_MS = 8000;
@@ -202,12 +203,14 @@ export async function reportH5Purchase(input: {
   userId: string;
   iapId: string;
   amount: string;
+  /** Which H5 button started this purchase. Same StoreKit id can be coins, reward3, livehub, or vip. */
+  type: IapType;
 }): Promise<H5PurchaseResult | null> {
-  if (!input.userId || !input.iapId) return null;
+  if (!input.userId || !input.iapId || !input.type) return null;
   const first = parsePurchase(
     await postJson(
       "/api/v2/purchase",
-      { userId: input.userId, iapId: input.iapId, amount: input.amount, ...h5AppClient() },
+      { userId: input.userId, iapId: input.iapId, amount: input.amount, type: input.type, ...h5AppClient() },
       PURCHASE_TIMEOUT_MS,
     ),
   );
@@ -218,7 +221,7 @@ export async function reportH5Purchase(input: {
   return parsePurchase(
     await postJson(
       "/api/v2/purchase",
-      { userId, iapId: input.iapId, amount: input.amount, ...h5AppClient() },
+      { userId, iapId: input.iapId, amount: input.amount, type: input.type, ...h5AppClient() },
       PURCHASE_TIMEOUT_MS,
     ),
   );

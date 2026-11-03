@@ -50,6 +50,7 @@ export type OverlayId =
   | "confirmLogout"
   | "confirmDelete"
   | "insufficient"
+  | "livehub"
   | null;
 
 export type BillRow = {
@@ -198,6 +199,7 @@ type AppState = {
   boughtNewbieOffer: boolean;
   registeredAt: number | null;
   reward3Until: number | null;
+  liveHubUnlocked: boolean;
   seenSplash: boolean;
   seenWelcome: boolean;
   toast: string | null;
@@ -245,6 +247,7 @@ type AppState = {
   buyCoins: (n: number, title: string) => void;
   buyNewbieOffer: () => void;
   buyReward3: () => void;
+  buyLiveHub: () => void;
   offerReward3IfDue: () => void;
   offerWelcomeIfNeeded: () => void;
   startPurchase: (request: IapRequest, apply: () => void) => void;
@@ -277,6 +280,7 @@ function blankProgress(userId: string | null) {
     boughtNewbieOffer: false,
     registeredAt: userId ? resolveRegisteredAt(userId) : null,
     reward3Until: null as number | null,
+    liveHubUnlocked: false,
     seenWelcome: false,
     toast: null as string | null,
     payBusy: false,
@@ -608,6 +612,10 @@ export const useAppStore = create<AppState>()(
           hasPaid: true,
         });
       },
+      buyLiveHub: () => {
+        if (get().liveHubUnlocked) return;
+        set({ liveHubUnlocked: true, hasPaid: true });
+      },
       offerReward3IfDue: () => {
         const { overlay, payBusy, userId, registeredAt, reward3Until, activeCall } = get();
         if (reward3Until != null) return;
@@ -659,6 +667,7 @@ export const useAppStore = create<AppState>()(
                 userId,
                 iapId: request.productId,
                 amount: request.price,
+                type: request.type,
               });
             }
           } else {
@@ -869,6 +878,7 @@ export const useAppStore = create<AppState>()(
           seenSplash: false,
           isVip: false,
           hasPaid: false,
+          liveHubUnlocked: false,
           activeCall: null,
           supportBusy: false,
         });
@@ -886,6 +896,7 @@ export const useAppStore = create<AppState>()(
         boughtNewbieOffer: s.boughtNewbieOffer,
         registeredAt: s.registeredAt,
         reward3Until: s.reward3Until,
+        liveHubUnlocked: s.liveHubUnlocked,
         seenSplash: s.seenSplash,
         seenWelcome: s.seenWelcome,
         threads: s.threads,
@@ -935,6 +946,9 @@ export const useAppStore = create<AppState>()(
         if (typeof state.reward3Until !== "number") {
           useAppStore.setState({ reward3Until: null });
         }
+        if (typeof state.liveHubUnlocked !== "boolean") {
+          useAppStore.setState({ liveHubUnlocked: false });
+        }
         if (typeof state.seenWelcome !== "boolean") {
           useAppStore.setState({ seenWelcome: Boolean(state.userId) });
         }
@@ -962,7 +976,7 @@ export const useAppStore = create<AppState>()(
         }
         coinReportArmed = true;
       },
-      version: 12,
+      version: 13,
       migrate: (persisted, fromVersion) => {
         const next = { ...(persisted as Record<string, unknown>) };
         if (fromVersion < 2) {
@@ -1013,6 +1027,9 @@ export const useAppStore = create<AppState>()(
         }
         if (fromVersion < 12) {
           next.deviceNewbie = inferDeviceNewbie(next, STARTING_COINS);
+        }
+        if (fromVersion < 13) {
+          next.liveHubUnlocked = false;
         }
         return next as typeof persisted;
       },

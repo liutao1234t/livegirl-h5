@@ -14,7 +14,7 @@ export type NavAnim =
 export const HANGUP_EXIT_MS = 500;
 
 export function shellKind(pathname: string): ShellKind {
-  if (pathname === "/" || pathname.startsWith("/call/")) return "full";
+  if (pathname === "/" || pathname === "/live-hub" || pathname.startsWith("/call/")) return "full";
   if (pathname.startsWith("/app/")) return "tab";
   return "stack";
 }

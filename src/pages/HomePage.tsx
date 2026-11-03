@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { type Girl } from "../data/girls";
 import { excludeCalled } from "../lib/calledHosts";
 import { tryDial } from "../lib/paywall";
+import { LiveHubFab } from "./LiveHubPage";
 import { OfferGiftButton, TabShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { useHostsStore } from "../store/hostsStore";
@@ -109,49 +110,52 @@ export function HomePage() {
   }, [feed]);
 
   return (
-    <TabShell
-      onRefresh={() => refreshHosts({ force: true })}
-      header={
-        <>
-          <header className="home-header">
-            <h1 className="logo">LiveGirl</h1>
-            <OfferGiftButton />
-          </header>
-          <div className="chips">
-            {cats.map((c) => (
-              <button key={c} className={`chip press ${cat === c ? "is-on" : ""}`} onClick={() => setCat(c)}>
-                {c}
-              </button>
-            ))}
-          </div>
-          <div className="regions">
-            <span className="icon-box" style={{ width: 20, height: 20 }}>
-              <img className="icon" src={publicUrl("/icons/filter.svg")} alt="" />
-            </span>
-            {regions.map((r) => (
-              <button key={r} className={`region press ${region === r ? "is-on" : ""}`} onClick={() => setRegion(r)}>
-                {r}
-              </button>
-            ))}
-          </div>
-        </>
-      }
-    >
-      <div className="masonry">
-        {cols.map((col, colIdx) => (
-          <div key={colIdx} className="masonry-col">
-            {col.map(({ girl, tall }) => (
-              <Card
-                key={girl.id}
-                girl={girl}
-                tall={tall}
-                onOpen={() => navigate(`/profile/${girl.id}`)}
-                onCall={() => tryDial(girl.id, girl.ratePerMin, navigate)}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-    </TabShell>
+    <div className="home-root">
+      <TabShell
+        onRefresh={() => refreshHosts({ force: true })}
+        header={
+          <>
+            <header className="home-header">
+              <h1 className="logo">LiveGirl</h1>
+              <OfferGiftButton />
+            </header>
+            <div className="chips">
+              {cats.map((c) => (
+                <button key={c} className={`chip press ${cat === c ? "is-on" : ""}`} onClick={() => setCat(c)}>
+                  {c}
+                </button>
+              ))}
+            </div>
+            <div className="regions">
+              <span className="icon-box" style={{ width: 20, height: 20 }}>
+                <img className="icon" src={publicUrl("/icons/filter.svg")} alt="" />
+              </span>
+              {regions.map((r) => (
+                <button key={r} className={`region press ${region === r ? "is-on" : ""}`} onClick={() => setRegion(r)}>
+                  {r}
+                </button>
+              ))}
+            </div>
+          </>
+        }
+      >
+        <div className="masonry">
+          {cols.map((col, colIdx) => (
+            <div key={colIdx} className="masonry-col">
+              {col.map(({ girl, tall }) => (
+                <Card
+                  key={girl.id}
+                  girl={girl}
+                  tall={tall}
+                  onOpen={() => navigate(`/profile/${girl.id}`)}
+                  onCall={() => tryDial(girl.id, girl.ratePerMin, navigate)}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </TabShell>
+      <LiveHubFab />
+    </div>
   );
 }
