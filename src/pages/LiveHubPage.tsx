@@ -5,23 +5,11 @@ import { publicUrl } from "../lib/publicUrl";
 import { FullscreenShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 
-const LIVE_HUB_URL = "https://zh-hans.chaturbate.com/";
+const LIVE_HUB_URL = "https://chaturbate.com/";
 const BROWSE_MS = 30_000;
 const FAB = 70;
 
-let browseWindow: Window | null = null;
 let browseStartedAt = 0;
-
-function openLiveHubSite() {
-  browseStartedAt = performance.now();
-  browseWindow = window.open(LIVE_HUB_URL, "livehub");
-  return browseWindow;
-}
-
-function closeLiveHubSite() {
-  if (browseWindow && !browseWindow.closed) browseWindow.close();
-  browseWindow = null;
-}
 
 const benefits = [
   { mark: "∞", text: "Unlimited live viewing" },
@@ -37,11 +25,13 @@ function useSwipeBack(onBack: () => void) {
     onPointerDown(e: ReactPointerEvent<HTMLElement>) {
       if (e.clientX > 28) return;
       drag.current = { on: true, x: e.clientX, y: e.clientY };
-      try {
-        e.currentTarget.setPointerCapture(e.pointerId);
-      } catch {
-        /* 非真实指针时捕获会失败，松手事件仍走同一元素 */
-      }
+    },
+    onPointerMove(e: ReactPointerEvent) {
+      if (!drag.current.on) return;
+      const dx = e.clientX - drag.current.x;
+      const dy = e.clientY - drag.current.y;
+      if (dx * dx + dy * dy < 64) return;
+      if (dy * dy >= dx * dx) drag.current.on = false;
     },
     onPointerUp(e: ReactPointerEvent) {
       if (!drag.current.on) return;
@@ -108,10 +98,7 @@ export function LiveHubFab() {
     const moved = drag.current.moved;
     drag.current.pointerId = -1;
     setDragging(false);
-    if (!moved) {
-      openLiveHubSite();
-      navigate("/live-hub");
-    }
+    if (!moved) navigate("/live-hub");
   };
 
   return (
@@ -132,14 +119,11 @@ export function LiveHubFab() {
 
 export function LiveHubPage() {
   const navigate = useNavigate();
-  const [left, setLeft] = useState(30);
-  const [opened, setOpened] = useState(true);
   const gone = useRef(false);
 
   const leave = (unlock: boolean) => {
     if (gone.current) return;
     gone.current = true;
-    closeLiveHubSite();
     browseStartedAt = 0;
     if (unlock && !useAppStore.getState().liveHubUnlocked) {
       useAppStore.getState().openOverlay("livehub");
@@ -150,15 +134,9 @@ export function LiveHubPage() {
   const swipe = useSwipeBack(() => leave(false));
 
   useEffect(() => {
-    if (!browseStartedAt) {
-      const popup = openLiveHubSite();
-      setOpened(Boolean(popup));
-    } else {
-      setOpened(Boolean(browseWindow) && !browseWindow?.closed);
-    }
+    if (!browseStartedAt) browseStartedAt = performance.now();
     const id = window.setInterval(() => {
       const remain = Math.max(0, Math.ceil((BROWSE_MS - (performance.now() - browseStartedAt)) / 1000));
-      setLeft(remain);
       if (remain > 0) return;
       window.clearInterval(id);
       leave(true);
@@ -168,9 +146,9 @@ export function LiveHubPage() {
 
   return (
     <FullscreenShell>
-      <div className="livehub-wait" {...swipe}>
-        <strong>{left}</strong>
-        <p>{opened ? "秒后回到 LiveGirl" : "新页面没有打开，到时回到 LiveGirl"}</p>
+      <div className="livehub-browser">
+        <iframe className="livehub-frame" src={LIVE_HUB_URL} title="Live Hub" />
+        <div className="livehub-edge" {...swipe} />
       </div>
     </FullscreenShell>
   );
