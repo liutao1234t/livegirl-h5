@@ -6594,4 +6594,9 @@ html.is-keyboard .sup-composer {
 .hub-room img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 14px; background: #312d38; }
 .hub-room strong { display: block; margin: 7px 0 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .hub-room small { opacity: .7; }
-.hub-player { display: block; width: 100%; height: min(72dvh, 660px); border: 0; border-radius: 14px; background: #111; }
+.hub-stage { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 14px; background: #17141b; }
+.hub-player { display: block; width: 100%; height: 100%; border: 0; }
+.hub-cover { position: absolute; inset: 0; display: grid; place-items: center; background: #17141b; color: white; }
+.hub-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .45; }
+.hub-cover div { position: relative; text-align: center; font-weight: 600; }
+.hub-cover progress { display: block; width: 128px; height: 6px; margin: 10px auto 0; accent-color: #ff6996; }

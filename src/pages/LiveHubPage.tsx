@@ -159,7 +159,24 @@ function playerSource(room: Room) {
   const src = template.content.querySelector("iframe")?.getAttribute("src");
   if (!src) return;
   const url = new URL(src, "https://chaturbate.com");
-  if (url.protocol === "https:" && (url.hostname === "chaturbate.com" || url.hostname.endsWith(".chaturbate.com"))) return url.href;
+  if (url.protocol === "https:" && (url.hostname === "chaturbate.com" || url.hostname.endsWith(".chaturbate.com"))) {
+    url.searchParams.set("embed_video_only", "1");
+    return url.href;
+  }
+}
+
+function RoomPlayer({ room, src }: { room: Room; src: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="hub-stage">
+      <iframe className="hub-player" title={room.username} src={src}
+        onLoad={() => setLoaded(true)} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />
+      {!loaded && <div className="hub-cover" role="status">
+        <img src={room.image_url_360x270} alt="" />
+        <div>Loading live room…<progress aria-label="Loading live room" /></div>
+      </div>}
+    </div>
+  );
 }
 
 export function LiveHubPage() {
@@ -188,7 +205,7 @@ export function LiveHubPage() {
 
   return <StackShell header={<StackBar title={username ?? "Live Hub"} />}>
     <div className="hub-content" ref={content}>
-      {username && src && <iframe className="hub-player" title={username} src={src} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />}
+      {username && room && src && <RoomPlayer key={src} room={room} src={src} />}
       {username && !src && (offset > 0 || !hasMore) && <p>This room is unavailable.</p>}
       {!username && rooms.length > 0 && <><h2>Live now</h2><div className="hub-grid">{rooms.map(item =>
         <button className="hub-room press" key={item.username} onClick={() => {
