@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { create } from "zustand";
 import { liveHubIap } from "../data/iap";
+import { rememberLiveHubReturn } from "../lib/liveHubReturn";
 import { publicUrl } from "../lib/publicUrl";
 import { useAppStore } from "../store/appStore";
 
@@ -140,7 +141,7 @@ function categoryOf(username: string): Exclude<HubTab, "all"> {
   return (["new", "hotie", "sexy"] as const)[hash % 3];
 }
 
-const PAGE_SIZE = 500;
+const PAGE_SIZE = 48;
 const initialFeed = {
   rooms: [] as Room[],
   offset: 0,
@@ -411,7 +412,10 @@ export function LiveHubPage() {
 
   return <StackShell onRefresh={username ? undefined : () => loadNextPage(true)} header={username ? <StackBar title={username} /> : (
     <header className="hub-bar">
-      <button className="circle-btn press" type="button" aria-label="Back" onClick={() => navigate("/app/home", { replace: true })}>
+      <button className="circle-btn press" type="button" aria-label="Back" onClick={() => {
+        rememberLiveHubReturn();
+        navigate("/app/home", { replace: true });
+      }}>
         <img src={publicUrl("/icons/livehub-back.svg")} alt="" width={16} height={16} />
       </button>
       <h1 className="hub-bar-title">

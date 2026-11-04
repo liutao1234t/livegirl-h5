@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../store/appStore";
 import { FullscreenShell } from "../shells/Shells";
+import { clearLiveHubReturn, hasPendingLiveHubReturn } from "../lib/liveHubReturn";
 import { LANDING_POSTER, mountLandingVideo } from "../lib/landingMedia";
 
 export function SplashPage() {
@@ -9,21 +10,27 @@ export function SplashPage() {
   const startSession = useAppStore((s) => s.startSession);
   const seenSplash = useAppStore((s) => s.seenSplash);
   const livehubReturn = new URLSearchParams(window.location.search).get("livehub") === "1";
+  const [recoverHome] = useState(hasPendingLiveHubReturn);
   const [leaving, setLeaving] = useState(false);
   const [live, setLive] = useState(false);
   const bgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (seenSplash && recoverHome) {
+      clearLiveHubReturn();
+      navigate("/app/home", { replace: true });
+      return;
+    }
     if (!seenSplash || !livehubReturn) return;
     void startSession();
     navigate("/app/home?livehub=1", { replace: true });
-  }, [seenSplash, livehubReturn, navigate, startSession]);
+  }, [seenSplash, livehubReturn, recoverHome, navigate, startSession]);
 
   useEffect(() => {
     const host = bgRef.current;
-    if (!host || (seenSplash && livehubReturn)) return;
+    if (!host || (seenSplash && (livehubReturn || recoverHome))) return;
     return mountLandingVideo(host, () => setLive(true));
-  }, [seenSplash, livehubReturn]);
+  }, [seenSplash, livehubReturn, recoverHome]);
 
   const onContinue = () => {
     if (leaving) return;
@@ -32,7 +39,7 @@ export function SplashPage() {
     navigate(livehubReturn ? "/app/home?livehub=1" : "/app/home", { replace: true });
   };
 
-  if (seenSplash && livehubReturn) return null;
+  if (seenSplash && (livehubReturn || recoverHome)) return null;
 
   return (
     <FullscreenShell>
