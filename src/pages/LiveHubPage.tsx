@@ -1,29 +1,14 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { create } from "zustand";
 import { liveHubIap } from "../data/iap";
 import { publicUrl } from "../lib/publicUrl";
 import { useAppStore } from "../store/appStore";
 
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useMatch, useNavigate, useParams } from "react-router-dom";
 import { StackShell } from "../shells/Shells";
 import { StackBar } from "../shells/StackBar";
 const BROWSE_MS = 30_000;
 const FAB = 70;
-
-const RETURN_KEY = "livehub-until";
-
-function rememberReturnDeadline() {
-  sessionStorage.setItem(RETURN_KEY, String(Date.now() + BROWSE_MS));
-}
-
-export function consumeLiveHubReturn() {
-  const raw = sessionStorage.getItem(RETURN_KEY);
-  if (!raw) return;
-  sessionStorage.removeItem(RETURN_KEY);
-  const until = Number(raw);
-  if (!Number.isFinite(until) || Date.now() < until) return;
-  if (!useAppStore.getState().liveHubUnlocked) useAppStore.getState().openOverlay("livehub");
-}
 
 const benefits = [
   { mark: "∞", text: "Unlimited live viewing" },
@@ -96,7 +81,6 @@ export function LiveHubFab() {
         if (event.detail && drag.current.moved) return;
         generation++;
         useRooms.setState(initialFeed);
-        rememberReturnDeadline();
         navigate("/live-hub");
       }}
       onPointerDown={onPointerDown}
@@ -111,10 +95,49 @@ export function LiveHubFab() {
 
 interface Room {
   username: string;
+  display_name?: string;
+  age?: number | null;
+  country?: string;
   image_url_360x270: string;
   num_users: number;
   current_show: string;
   iframe_embed: string;
+}
+
+type HubTab = "all" | "new" | "hotie" | "sexy";
+type CardKind = "banner" | "tall" | "stack" | "wide" | "half";
+
+const tabs: { id: HubTab; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "new", label: "New" },
+  { id: "hotie", label: "Hotie" },
+  { id: "sexy", label: "Sexy" },
+];
+
+const regions = new Intl.DisplayNames(["en"], { type: "region" });
+
+function countryLabel(code?: string) {
+  const trimmed = code?.trim() ?? "";
+  if (!/^[A-Za-z]{2}$/.test(trimmed)) return "";
+  try {
+    return regions.of(trimmed.toUpperCase()) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function roomTitle(room: Room) {
+  const raw = room.display_name?.trim() ?? "";
+  const usable = raw.length > 0 && raw.length <= 18 && !/https?:|www\.|\.com/i.test(raw);
+  const name = usable ? raw : room.username;
+  return typeof room.age === "number" && room.age > 0 ? `${name}, ${room.age}` : name;
+}
+
+/** Non-banner rooms stay in one tab: username hash % 3 is New, Hotie, or Sexy. */
+function categoryOf(username: string): Exclude<HubTab, "all"> {
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) hash = (Math.imul(hash, 33) + username.charCodeAt(i)) >>> 0;
+  return (["new", "hotie", "sexy"] as const)[hash % 3];
 }
 
 const PAGE_SIZE = 500;
@@ -191,10 +214,161 @@ function RoomPlayer({ room, src }: { room: Room; src: string }) {
   );
 }
 
+const viewersIcon: Record<CardKind, string> = {
+  banner: "/icons/livehub-viewers.svg",
+  tall: "/icons/livehub-viewers-sm.svg",
+  stack: "/icons/livehub-viewers-xs.svg",
+  wide: "/icons/livehub-viewers-md.svg",
+  half: "/icons/livehub-viewers-xs.svg",
+};
+
+const pinIcon: Record<CardKind, string> = {
+  banner: "/icons/livehub-pin.svg",
+  tall: "/icons/livehub-pin-sm.svg",
+  stack: "/icons/livehub-pin-md.svg",
+  wide: "/icons/livehub-pin-sm.svg",
+  half: "/icons/livehub-pin-sm.svg",
+};
+
+function RoomFace({ room, kind, onOpen }: { room: Room; kind: CardKind; onOpen: (room: Room) => void }) {
+  const place = countryLabel(room.country);
+  const combined = kind === "banner" || kind === "wide";
+  return (
+    <button type="button" className={`hub-face press is-${kind}`} onClick={() => onOpen(room)}>
+      <img className="hub-photo" src={room.image_url_360x270} alt="" />
+      {combined ? (
+        <span className="hub-pill">
+          <i className="hub-dot" />
+          Live
+          <span className="hub-pill-bar">|</span>
+          <img src={publicUrl(viewersIcon[kind])} alt="" />
+          {room.num_users.toLocaleString()}
+        </span>
+      ) : (
+        <>
+          <span className="hub-pill"><i className="hub-dot" />Live</span>
+          <span className="hub-count">
+            <img src={publicUrl(viewersIcon[kind])} alt="" />
+            {room.num_users.toLocaleString()}
+          </span>
+        </>
+      )}
+      {kind === "banner" && (
+        <span className="hub-ribbon" aria-hidden="true">
+          <img src={publicUrl("/icons/livehub-ribbon-crown.svg")} alt="" width={16} height={16} />
+        </span>
+      )}
+      <span className="hub-meta">
+        <strong>{roomTitle(room)}</strong>
+        {place && (
+          <small>
+            <img src={publicUrl(pinIcon[kind])} alt="" />
+            {place}
+          </small>
+        )}
+      </span>
+    </button>
+  );
+}
+
+function Banner({ rooms, onOpen }: { rooms: Room[]; onOpen: (room: Room) => void }) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (rooms.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => {
+      const el = scroller.current;
+      if (!el || el.clientWidth === 0) return;
+      const next = (Math.round(el.scrollLeft / el.clientWidth) + 1) % rooms.length;
+      el.scrollTo({ left: next * el.clientWidth, behavior: "smooth" });
+    }, 4500);
+    return () => window.clearInterval(timer);
+  }, [rooms.length]);
+
+  const onScroll = () => {
+    const el = scroller.current;
+    if (!el || el.clientWidth === 0) return;
+    setIndex(Math.round(el.scrollLeft / el.clientWidth));
+  };
+
+  return (
+    <section className="hub-banner" aria-label="Featured rooms">
+      <div className="hub-banner-track" ref={scroller} onScroll={onScroll}>
+        {rooms.map((room) => (
+          <RoomFace key={room.username} room={room} kind="banner" onOpen={onOpen} />
+        ))}
+      </div>
+      {rooms.length > 1 && (
+        <div className="hub-dots">
+          {rooms.map((room, dot) => (
+            <button
+              key={room.username}
+              type="button"
+              className={dot === index ? "is-on" : ""}
+              aria-label={`Show room ${dot + 1}`}
+              aria-current={dot === index ? "true" : undefined}
+              onClick={() => scroller.current?.scrollTo({ left: dot * scroller.current.clientWidth, behavior: "smooth" })}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function RoomRows({ rooms, onOpen }: { rooms: Room[]; onOpen: (room: Room) => void }) {
+  const rows: { key: string; node: ReactNode }[] = [];
+  let index = 0;
+  let phase = 0;
+  while (index < rooms.length) {
+    const left = rooms.length - index;
+    const step = phase % 3;
+    if (step === 0 && left >= 3) {
+      const group = rooms.slice(index, index + 3);
+      rows.push({
+        key: group.map((room) => room.username).join("-"),
+        node: (
+          <div className="hub-split">
+            <RoomFace room={group[0]} kind="tall" onOpen={onOpen} />
+            <div className="hub-col">
+              <RoomFace room={group[1]} kind="stack" onOpen={onOpen} />
+              <RoomFace room={group[2]} kind="stack" onOpen={onOpen} />
+            </div>
+          </div>
+        ),
+      });
+      index += 3;
+    } else if (step === 1 && left >= 1) {
+      const room = rooms[index];
+      rows.push({ key: room.username, node: <RoomFace room={room} kind="wide" onOpen={onOpen} /> });
+      index += 1;
+    } else if (left >= 2) {
+      const group = rooms.slice(index, index + 2);
+      rows.push({
+        key: group.map((room) => room.username).join("-"),
+        node: (
+          <div className="hub-pair">
+            {group.map((room) => <RoomFace key={room.username} room={room} kind="half" onOpen={onOpen} />)}
+          </div>
+        ),
+      });
+      index += 2;
+    } else {
+      const room = rooms[index];
+      rows.push({ key: room.username, node: <RoomFace room={room} kind="wide" onOpen={onOpen} /> });
+      index += 1;
+    }
+    phase += 1;
+  }
+  return <div className="hub-rows">{rows.map((row) => <div key={row.key}>{row.node}</div>)}</div>;
+}
+
 export function LiveHubPage() {
   const navigate = useNavigate();
   const { username } = useParams();
   const { rooms, status, hasMore, offset } = useRooms();
+  const [tab, setTab] = useState<HubTab>("all");
   const content = useRef<HTMLDivElement>(null);
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -215,23 +389,69 @@ export function LiveHubPage() {
   const room = rooms?.find(item => item.username === username);
   const src = room && playerSource(room);
 
-  return <StackShell onRefresh={username ? undefined : () => loadNextPage(true)} header={<StackBar title={username ?? "Live Hub"} />}>
-    <div className={username ? "hub-room-view" : "hub-content"} ref={content}>
-      {username && room && src && <RoomPlayer key={src} room={room} src={src} />}
+  const unlocked = useAppStore((s) => s.liveHubUnlocked);
+  const [expiredRoom, setExpiredRoom] = useState<string | null>(null);
+  useEffect(() => {
+    setExpiredRoom(null);
+    if (!username || !src || unlocked) return;
+    const timer = window.setTimeout(() => {
+      setExpiredRoom(username);
+      useAppStore.getState().openOverlay("livehub");
+    }, BROWSE_MS);
+    return () => window.clearTimeout(timer);
+  }, [username, src, unlocked]);
+
+  const featured = rooms.slice(0, 3);
+  const catalog = rooms.slice(featured.length);
+  const visible = tab === "all" ? catalog : catalog.filter((item) => categoryOf(item.username) === tab);
+  const openRoom = (item: Room) => {
+    useRooms.setState({ scrollTop: content.current?.closest(".shell-body")?.scrollTop ?? 0 });
+    navigate("/live-hub/" + encodeURIComponent(item.username), { state: { fromLiveHub: true } });
+  };
+
+  return <StackShell onRefresh={username ? undefined : () => loadNextPage(true)} header={username ? <StackBar title={username} /> : (
+    <header className="hub-bar">
+      <button className="circle-btn press" type="button" aria-label="Back" onClick={() => navigate(-1)}>
+        <img src={publicUrl("/icons/livehub-back.svg")} alt="" width={16} height={16} />
+      </button>
+      <h1 className="hub-bar-title">
+        <span>Live </span>
+        <span className="hub-bar-hub">Hub</span>
+        <img src={publicUrl("/icons/livehub-live.svg")} alt="" width={24} height={24} />
+      </h1>
+      <button className="hub-crown press" type="button" aria-label="Unlock Live Hub VIP" onClick={() => useAppStore.getState().openOverlay("livehub")}>
+        <img src={publicUrl("/icons/livehub-crown.svg")} alt="" width={20} height={20} />
+      </button>
+    </header>
+  )}>
+    <div className={username ? "hub-room-view" : "hub-list"} data-category={username ? undefined : tab} ref={content}>
+      {username && room && src && (unlocked || expiredRoom !== username) && <RoomPlayer key={src} room={room} src={src} />}
       {username && !src && (offset > 0 || !hasMore) && <p>This room is unavailable.</p>}
-      {!username && rooms.length > 0 && <><h2>Live now</h2><div className="hub-grid">{rooms.map(item =>
-        <button className="hub-room press" key={item.username} onClick={() => {
-          useRooms.setState({ scrollTop: content.current?.closest(".shell-body")?.scrollTop ?? 0 });
-          navigate("/live-hub/" + encodeURIComponent(item.username));
-        }}>
-          <img src={item.image_url_360x270} alt="" loading="lazy" />
-          <strong>{item.username}</strong><small>{item.num_users.toLocaleString()} watching</small>
-        </button>
-      )}</div></>}
+      {!username && featured.length > 0 && <Banner rooms={featured} onOpen={openRoom} />}
+      {!username && rooms.length > 0 && (
+        <div className="hub-tabs" role="tablist" aria-label="Live categories">
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              className={`hub-tab press${tab === item.id ? " is-on" : ""}`}
+              aria-selected={tab === item.id}
+              onClick={() => setTab(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {!username && visible.length > 0 && <RoomRows rooms={visible} onOpen={openRoom} />}
+      {!username && rooms.length > 0 && visible.length === 0 && status !== "loading" && (
+        <p className="hub-note">No rooms in this category right now.</p>
+      )}
       {!username && hasMore && <div ref={sentinel} style={{ height: 1 }} />}
-      {(!username || !offset) && status === "loading" && <p role="status">Loading live rooms…</p>}
-      {(!username || !offset) && status === "failed" && <p role="alert">Couldn’t load rooms. <button onClick={() => loadNextPage()}>Try again</button></p>}
-      {!username && !hasMore && <p>{rooms.length ? "You’ve reached the end." : "No public rooms are live right now."}</p>}
+      {(!username || !offset) && status === "loading" && <p className="hub-note" role="status">Loading live rooms…</p>}
+      {(!username || !offset) && status === "failed" && <p className="hub-note" role="alert">Couldn’t load rooms. <button type="button" onClick={() => loadNextPage()}>Try again</button></p>}
+      {!username && !hasMore && <p className="hub-note">{rooms.length ? "You’ve reached the end." : "No public rooms are live right now."}</p>}
     </div>
   </StackShell>;
 }
@@ -242,6 +462,16 @@ export function LiveHubUnlock() {
   const startPurchase = useAppStore((s) => s.startPurchase);
   const buyLiveHub = useAppStore((s) => s.buyLiveHub);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+  const inRoom = useMatch("/live-hub/:username");
+  const dismiss = () => {
+    close();
+    if (!inRoom) return;
+    if (location.state?.fromLiveHub) navigate(-1);
+    else navigate("/live-hub", { replace: true });
+  };
+
   const buy = () => {
     startPurchase(liveHubIap(), () => {
       buyLiveHub();
@@ -251,11 +481,11 @@ export function LiveHubUnlock() {
 
   return (
     <div className="livehub-gate">
-      <button type="button" className="livehub-back press" aria-label="Back" onClick={close}>
+      <button type="button" className="livehub-back press" aria-label="Back" onClick={dismiss}>
         <img src={publicUrl("/icons/livehub-back.svg")} alt="" width={16} height={16} />
       </button>
       <div className="livehub-card">
-        <button type="button" className="livehub-x press" aria-label="Close" onClick={close}>
+        <button type="button" className="livehub-x press" aria-label="Close" onClick={dismiss}>
           <img src={publicUrl("/icons/livehub-close.svg")} alt="" width={12} height={12} />
         </button>
         <p className="livehub-kicker">♛ LIVEHUB VIP</p>

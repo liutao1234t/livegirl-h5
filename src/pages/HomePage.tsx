@@ -78,6 +78,9 @@ export function HomePage() {
   const navigate = useNavigate();
   const hosts = useHostsStore((s) => s.hosts);
   const refreshHosts = useHostsStore((s) => s.refreshHosts);
+  const showLiveHub = useAppStore((s) => s.hasPaid || (
+    !!s.registeredAt && !!s.loginAt && s.loginAt - s.registeredAt > 24 * 60 * 60 * 1000
+  ));
   const calledGirlIds = useAppStore((s) => s.calledGirlIds);
   const [cat, setCat] = useState<(typeof cats)[number]>("Hot");
   const [region, setRegion] = useState<(typeof regions)[number]>("Global");
@@ -91,7 +94,6 @@ export function HomePage() {
     if (url.searchParams.get("livehub") === "1") {
       url.searchParams.delete("livehub");
       window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
-      if (!useAppStore.getState().liveHubUnlocked) useAppStore.getState().openOverlay("livehub");
     }
     useAppStore.getState().offerWelcomeIfNeeded();
     useAppStore.getState().offerReward3IfDue();
@@ -161,7 +163,7 @@ export function HomePage() {
           ))}
         </div>
       </TabShell>
-      <LiveHubFab />
+      {showLiveHub && <LiveHubFab />}
     </div>
   );
 }

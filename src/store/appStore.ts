@@ -198,6 +198,7 @@ type AppState = {
   hasPaid: boolean;
   boughtNewbieOffer: boolean;
   registeredAt: number | null;
+  loginAt: number | null;
   reward3Until: number | null;
   liveHubUnlocked: boolean;
   seenSplash: boolean;
@@ -278,6 +279,7 @@ function blankProgress(userId: string | null) {
     isVip: false,
     hasPaid: false,
     boughtNewbieOffer: false,
+    loginAt: null as number | null,
     registeredAt: userId ? resolveRegisteredAt(userId) : null,
     reward3Until: null as number | null,
     liveHubUnlocked: false,
@@ -524,6 +526,7 @@ export const useAppStore = create<AppState>()(
       startSession: () => {
         if (startSessionJob) return startSessionJob;
         startSessionJob = (async () => {
+          const loginAt = Date.now();
           const existingId = get().userId;
           if (!existingId) {
             const localId = newUserId();
@@ -534,6 +537,7 @@ export const useAppStore = create<AppState>()(
               set({
                 ...applyDeviceNewbie(localId, get().deviceNewbie),
                 seenSplash: true,
+                loginAt,
               });
               rememberInboxPeople({});
               void import("./sayHiStore").then((m) => m.resetSayHiSession());
@@ -552,7 +556,7 @@ export const useAppStore = create<AppState>()(
             return;
           }
 
-          set({ seenSplash: true });
+          set({ seenSplash: true, loginAt });
           const login = await loginH5User(existingId);
           set({
             accessToken: login?.accessToken ?? get().accessToken ?? null,
@@ -877,7 +881,7 @@ export const useAppStore = create<AppState>()(
           payBusy: false,
           seenSplash: false,
           isVip: false,
-          hasPaid: false,
+          loginAt: null,
           liveHubUnlocked: false,
           activeCall: null,
           supportBusy: false,
@@ -895,6 +899,7 @@ export const useAppStore = create<AppState>()(
         hasPaid: s.hasPaid,
         boughtNewbieOffer: s.boughtNewbieOffer,
         registeredAt: s.registeredAt,
+        loginAt: s.loginAt,
         reward3Until: s.reward3Until,
         liveHubUnlocked: s.liveHubUnlocked,
         seenSplash: s.seenSplash,

@@ -1,4 +1,3 @@
-import { consumeLiveHubReturn } from "../pages/LiveHubPage";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type AnimationEvent } from "react";
 import { useLocation, useNavigationType, type Location } from "react-router-dom";
 import { AppRoutes } from "./AppRoutes";
@@ -59,7 +58,6 @@ export function NavStage() {
   useLayoutEffect(() => {
     const prev = locRef.current;
     if (prev.key === location.key) return;
-    if (prev.pathname.startsWith("/live-hub") && !location.pathname.startsWith("/live-hub")) consumeLiveHubReturn();
     rememberNavFrom(prev.pathname);
     locRef.current = location;
     const from = shellKind(prev.pathname);
