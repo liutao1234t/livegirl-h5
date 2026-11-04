@@ -44,6 +44,9 @@ export function decideNavAnim(
   toState?: unknown,
 ): NavAnim {
   if (reduceMotion || fromPath === toPath) return "none";
+  // Switch in place so the room player and a second copy of the feed never mount together.
+  if (fromPath.startsWith("/live-hub/") && toPath === "/live-hub") return "none";
+  if (fromPath === "/live-hub" && toPath.startsWith("/live-hub/")) return "none";
   const from = shellKind(fromPath);
   const to = shellKind(toPath);
 

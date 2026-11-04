@@ -235,7 +235,7 @@ function RoomFace({ room, kind, onOpen }: { room: Room; kind: CardKind; onOpen: 
   const combined = kind === "banner" || kind === "wide";
   return (
     <button type="button" className={`hub-face press is-${kind}`} onClick={() => onOpen(room)}>
-      <img className="hub-photo" src={room.image_url_360x270} alt="" />
+      <img className="hub-photo" loading={kind === "banner" ? "eager" : "lazy"} decoding="async" src={room.image_url_360x270} alt="" />
       {combined ? (
         <span className="hub-pill">
           <i className="hub-dot" />
@@ -411,7 +411,7 @@ export function LiveHubPage() {
 
   return <StackShell onRefresh={username ? undefined : () => loadNextPage(true)} header={username ? <StackBar title={username} /> : (
     <header className="hub-bar">
-      <button className="circle-btn press" type="button" aria-label="Back" onClick={() => navigate(-1)}>
+      <button className="circle-btn press" type="button" aria-label="Back" onClick={() => navigate("/app/home", { replace: true })}>
         <img src={publicUrl("/icons/livehub-back.svg")} alt="" width={16} height={16} />
       </button>
       <h1 className="hub-bar-title">
