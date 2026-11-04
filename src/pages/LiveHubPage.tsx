@@ -141,9 +141,12 @@ function categoryOf(username: string): Exclude<HubTab, "all"> {
   return (["new", "hotie", "sexy"] as const)[hash % 3];
 }
 
-const PAGE_SIZE = 48;
+const PAGE_SIZE = 24;
 const initialFeed = {
   rooms: [] as Room[],
+  featured: [] as Room[],
+  pageStart: 0,
+  requestedOffset: 0,
   offset: 0,
   hasMore: true,
   status: "idle" as "idle" | "loading" | "failed",
@@ -153,27 +156,28 @@ const initialFeed = {
 let generation = 0;
 const useRooms = create(() => initialFeed);
 
-async function loadNextPage(refresh = false) {
+async function loadPage(start: number, refresh = false) {
   const feed = useRooms.getState();
-  if (!refresh && (!feed.hasMore || feed.status === "loading")) return;
-  if (refresh) generation++;
-  const start = refresh ? initialFeed : feed;
-  useRooms.setState({ status: "loading" });
+  if (!refresh && feed.status === "loading") return;
+  generation++;
+  useRooms.setState({ status: "loading", requestedOffset: start });
   const requestId = generation;
   try {
     const params = new URLSearchParams({
-      wm: "jqpA8", client_ip: "request_ip", limit: String(PAGE_SIZE), offset: String(start.offset),
+      wm: "jqpA8", client_ip: "request_ip", limit: String(PAGE_SIZE), offset: String(start),
     });
     const response = await fetch("https://chaturbate.com/api/public/affiliates/onlinerooms/?" + params);
     if (!response.ok) throw new Error("Room list unavailable");
     const { results, count } = await response.json() as { results: Room[]; count: number };
     if (requestId !== generation) return;
-    const rooms = new Map(start.rooms.map(room => [room.username, room]));
+    const rooms = new Map<string, Room>();
     for (const room of results) {
       if (room.current_show === "public" && room.iframe_embed) rooms.set(room.username, room);
     }
-    const offset = start.offset + results.length;
-    useRooms.setState({ rooms: [...rooms.values()], offset, hasMore: results.length > 0 && offset < count, status: "idle" });
+    const offset = start + results.length;
+    const pageRooms = [...rooms.values()];
+    const featured = start === 0 ? pageRooms.slice(0, 3) : feed.featured;
+    useRooms.setState({ rooms: pageRooms, featured, pageStart: start, scrollTop: 0, offset, hasMore: results.length > 0 && offset < count, status: "idle" });
   } catch {
     if (requestId === generation) useRooms.setState({ status: "failed" });
   }
@@ -368,26 +372,18 @@ function RoomRows({ rooms, onOpen }: { rooms: Room[]; onOpen: (room: Room) => vo
 export function LiveHubPage() {
   const navigate = useNavigate();
   const { username } = useParams();
-  const { rooms, status, hasMore, offset } = useRooms();
+  const { rooms, featured, status, hasMore, offset, pageStart, requestedOffset } = useRooms();
   const [tab, setTab] = useState<HubTab>("all");
   const content = useRef<HTMLDivElement>(null);
-  const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (useRooms.getState().offset === 0) void loadNextPage();
-    const body = content.current?.closest(".shell-body");
-    if (body) body.scrollTop = username ? 0 : useRooms.getState().scrollTop;
+    if (!useRooms.getState().offset && useRooms.getState().hasMore) void loadPage(0);
   }, [username]);
 
   useEffect(() => {
-    const target = sentinel.current;
-    if (!target || username || !hasMore || status !== "idle") return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) void loadNextPage();
-    }, { root: target.closest(".shell-body"), rootMargin: "0px 0px 240px 0px" });
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [username, hasMore, status, offset]);
-  const room = rooms?.find(item => item.username === username);
+    const body = content.current?.closest(".shell-body");
+    if (body) body.scrollTop = username ? 0 : useRooms.getState().scrollTop;
+  }, [username, pageStart]);
+  const room = rooms.find(item => item.username === username) ?? featured.find(item => item.username === username);
   const src = room && playerSource(room);
 
   const unlocked = useAppStore((s) => s.liveHubUnlocked);
@@ -402,17 +398,18 @@ export function LiveHubPage() {
     return () => window.clearTimeout(timer);
   }, [username, src, unlocked]);
 
-  const featured = rooms.slice(0, 3);
-  const catalog = rooms.slice(featured.length);
+  const catalog = rooms.filter(room => !featured.some(item => item.username === room.username));
   const visible = tab === "all" ? catalog : catalog.filter((item) => categoryOf(item.username) === tab);
   const openRoom = (item: Room) => {
     useRooms.setState({ scrollTop: content.current?.closest(".shell-body")?.scrollTop ?? 0 });
     navigate("/live-hub/" + encodeURIComponent(item.username), { state: { fromLiveHub: true } });
   };
 
-  return <StackShell onRefresh={username ? undefined : () => loadNextPage(true)} header={username ? <StackBar title={username} /> : (
+  return <StackShell onRefresh={username ? undefined : () => loadPage(0, true)} header={username ? <StackBar title={username} /> : (
     <header className="hub-bar">
       <button className="circle-btn press" type="button" aria-label="Back" onClick={() => {
+        generation++;
+        useRooms.setState(initialFeed);
         rememberLiveHubReturn();
         navigate("/app/home", { replace: true });
       }}>
@@ -452,9 +449,15 @@ export function LiveHubPage() {
       {!username && rooms.length > 0 && visible.length === 0 && status !== "loading" && (
         <p className="hub-note">No rooms in this category right now.</p>
       )}
-      {!username && hasMore && <div ref={sentinel} style={{ height: 1 }} />}
+      {!username && (pageStart > 0 || (offset > 0 && hasMore)) && (
+        <nav className="hub-pagination" aria-label="Room pages">
+          <button className="hub-tab press" disabled={!pageStart || status === "loading"} onClick={() => loadPage(Math.max(0, pageStart - PAGE_SIZE))}>Previous</button>
+          <span>Page {Math.floor(pageStart / PAGE_SIZE) + 1}</span>
+          <button className="hub-tab press" disabled={!hasMore || status === "loading"} onClick={() => loadPage(offset)}>Next</button>
+        </nav>
+      )}
       {(!username || !offset) && status === "loading" && <p className="hub-note" role="status">Loading live rooms…</p>}
-      {(!username || !offset) && status === "failed" && <p className="hub-note" role="alert">Couldn’t load rooms. <button type="button" onClick={() => loadNextPage()}>Try again</button></p>}
+      {(!username || !offset) && status === "failed" && <p className="hub-note" role="alert">Couldn’t load rooms. <button type="button" onClick={() => loadPage(requestedOffset)}>Try again</button></p>}
       {!username && !hasMore && <p className="hub-note">{rooms.length ? "You’ve reached the end." : "No public rooms are live right now."}</p>}
     </div>
   </StackShell>;

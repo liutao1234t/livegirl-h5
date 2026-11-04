@@ -6922,6 +6922,9 @@ html.is-keyboard .sup-composer {
 .hub-face.is-half .hub-meta small,
 .hub-face.is-wide .hub-meta small { font-size: 12px; }
 
+.hub-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.hub-pagination button:disabled { opacity: 0.45; }
+
 .hub-note { margin: 8px 0 0; color: rgba(255, 255, 255, 0.8); }
 
 .hub-note button {
