@@ -383,6 +383,42 @@ export function LiveHubPage() {
     const body = content.current?.closest(".shell-body");
     if (body) body.scrollTop = username ? 0 : useRooms.getState().scrollTop;
   }, [username, pageStart]);
+  useEffect(() => {
+    const body = content.current?.closest<HTMLElement>(".shell-body");
+    if (!body || username) return;
+    let lastTop = body.scrollTop;
+    let startY = 0;
+    const loadAtEnd = () => {
+      const feed = useRooms.getState();
+      if (feed.offset && feed.hasMore && feed.status === "idle" &&
+          body.scrollHeight - body.clientHeight - body.scrollTop <= 24) {
+        void loadPage(feed.offset);
+      }
+    };
+    const onScroll = () => {
+      if (body.scrollTop > lastTop) loadAtEnd();
+      lastTop = body.scrollTop;
+    };
+    // Short filtered pages may fit on screen without firing a scroll event.
+    const onTouchStart = (event: TouchEvent) => { startY = event.touches[0].clientY; };
+    const onTouchEnd = (event: TouchEvent) => {
+      if (body.scrollHeight <= body.clientHeight + 1 && startY - event.changedTouches[0].clientY > 40) loadAtEnd();
+    };
+    const onWheel = (event: WheelEvent) => {
+      if (body.scrollHeight <= body.clientHeight + 1 && event.deltaY > 0) loadAtEnd();
+    };
+    body.addEventListener("scroll", onScroll);
+    body.addEventListener("touchstart", onTouchStart, { passive: true });
+    body.addEventListener("touchend", onTouchEnd);
+    body.addEventListener("wheel", onWheel, { passive: true });
+    return () => {
+      body.removeEventListener("scroll", onScroll);
+      body.removeEventListener("touchstart", onTouchStart);
+      body.removeEventListener("touchend", onTouchEnd);
+      body.removeEventListener("wheel", onWheel);
+    };
+  }, [username]);
+
   const room = rooms.find(item => item.username === username) ?? featured.find(item => item.username === username);
   const src = room && playerSource(room);
 
@@ -448,13 +484,6 @@ export function LiveHubPage() {
       {!username && visible.length > 0 && <RoomRows rooms={visible} onOpen={openRoom} />}
       {!username && rooms.length > 0 && visible.length === 0 && status !== "loading" && (
         <p className="hub-note">No rooms in this category right now.</p>
-      )}
-      {!username && (pageStart > 0 || (offset > 0 && hasMore)) && (
-        <nav className="hub-pagination" aria-label="Room pages">
-          <button className="hub-tab press" disabled={!pageStart || status === "loading"} onClick={() => loadPage(Math.max(0, pageStart - PAGE_SIZE))}>Previous</button>
-          <span>Page {Math.floor(pageStart / PAGE_SIZE) + 1}</span>
-          <button className="hub-tab press" disabled={!hasMore || status === "loading"} onClick={() => loadPage(offset)}>Next</button>
-        </nav>
       )}
       {(!username || !offset) && status === "loading" && <p className="hub-note" role="status">Loading live rooms…</p>}
       {(!username || !offset) && status === "failed" && <p className="hub-note" role="alert">Couldn’t load rooms. <button type="button" onClick={() => loadPage(requestedOffset)}>Try again</button></p>}
