@@ -145,7 +145,7 @@ const PAGE_SIZE = 24;
 const initialFeed = {
   rooms: [] as Room[],
   featured: [] as Room[],
-  pageStart: 0,
+  pages: [] as Room[][],
   requestedOffset: 0,
   offset: 0,
   hasMore: true,
@@ -177,7 +177,11 @@ async function loadPage(start: number, refresh = false) {
     const offset = start + results.length;
     const pageRooms = [...rooms.values()];
     const featured = start === 0 ? pageRooms.slice(0, 3) : feed.featured;
-    useRooms.setState({ rooms: pageRooms, featured, pageStart: start, scrollTop: 0, offset, hasMore: results.length > 0 && offset < count, status: "idle" });
+    const previous = start === 0 ? [] : feed.rooms;
+    const known = new Set(previous.map(room => room.username));
+    const added = pageRooms.filter(room => !known.has(room.username));
+    const pages = start === 0 ? [] : feed.pages;
+    useRooms.setState({ rooms: previous.concat(added), pages: added.length ? [...pages, added] : pages, featured, offset, hasMore: results.length > 0 && offset < count, status: "idle" });
   } catch {
     if (requestId === generation) useRooms.setState({ status: "failed" });
   }
@@ -323,7 +327,27 @@ function Banner({ rooms, onOpen }: { rooms: Room[]; onOpen: (room: Room) => void
 }
 
 function RoomRows({ rooms, onOpen }: { rooms: Room[]; onOpen: (room: Room) => void }) {
-  const rows: { key: string; node: ReactNode }[] = [];
+  const container = useRef<HTMLDivElement>(null);
+  const roomKeys = rooms.map(room => room.username).join("/");
+  const [mounted, setMounted] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    const el = container.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(entries => {
+      setMounted(previous => {
+        const next = new Set(previous);
+        for (const entry of entries) {
+          const key = (entry.target as HTMLElement).dataset.row!;
+          if (entry.isIntersecting) next.add(key);
+          else next.delete(key);
+        }
+        return next;
+      });
+    }, { root: el.closest(".shell-body"), rootMargin: "400px 0px" });
+    for (const row of el.children) observer.observe(row);
+    return () => observer.disconnect();
+  }, [roomKeys]);
+  const rows: { key: string; kind: "split" | "wide" | "pair"; node: ReactNode }[] = [];
   let index = 0;
   let phase = 0;
   while (index < rooms.length) {
@@ -333,6 +357,7 @@ function RoomRows({ rooms, onOpen }: { rooms: Room[]; onOpen: (room: Room) => vo
       const group = rooms.slice(index, index + 3);
       rows.push({
         key: group.map((room) => room.username).join("-"),
+        kind: "split",
         node: (
           <div className="hub-split">
             <RoomFace room={group[0]} kind="tall" onOpen={onOpen} />
@@ -346,12 +371,13 @@ function RoomRows({ rooms, onOpen }: { rooms: Room[]; onOpen: (room: Room) => vo
       index += 3;
     } else if (step === 1 && left >= 1) {
       const room = rooms[index];
-      rows.push({ key: room.username, node: <RoomFace room={room} kind="wide" onOpen={onOpen} /> });
+      rows.push({ key: room.username, kind: "wide", node: <RoomFace room={room} kind="wide" onOpen={onOpen} /> });
       index += 1;
     } else if (left >= 2) {
       const group = rooms.slice(index, index + 2);
       rows.push({
         key: group.map((room) => room.username).join("-"),
+        kind: "pair",
         node: (
           <div className="hub-pair">
             {group.map((room) => <RoomFace key={room.username} room={room} kind="half" onOpen={onOpen} />)}
@@ -361,18 +387,22 @@ function RoomRows({ rooms, onOpen }: { rooms: Room[]; onOpen: (room: Room) => vo
       index += 2;
     } else {
       const room = rooms[index];
-      rows.push({ key: room.username, node: <RoomFace room={room} kind="wide" onOpen={onOpen} /> });
+      rows.push({ key: room.username, kind: "wide", node: <RoomFace room={room} kind="wide" onOpen={onOpen} /> });
       index += 1;
     }
     phase += 1;
   }
-  return <div className="hub-rows">{rows.map((row) => <div key={row.key}>{row.node}</div>)}</div>;
+  return <div className="hub-rows" ref={container}>{rows.map(row =>
+    <div key={row.key} data-row={row.key} className={`hub-slot is-${row.kind}`}>
+      {mounted.has(row.key) && row.node}
+    </div>
+  )}</div>;
 }
 
 export function LiveHubPage() {
   const navigate = useNavigate();
   const { username } = useParams();
-  const { rooms, featured, status, hasMore, offset, pageStart, requestedOffset } = useRooms();
+  const { rooms, featured, status, hasMore, offset, pages, requestedOffset } = useRooms();
   const [tab, setTab] = useState<HubTab>("all");
   const content = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -382,7 +412,7 @@ export function LiveHubPage() {
   useEffect(() => {
     const body = content.current?.closest(".shell-body");
     if (body) body.scrollTop = username ? 0 : useRooms.getState().scrollTop;
-  }, [username, pageStart]);
+  }, [username]);
   useEffect(() => {
     const body = content.current?.closest<HTMLElement>(".shell-body");
     if (!body || username) return;
@@ -391,7 +421,7 @@ export function LiveHubPage() {
     const loadAtEnd = () => {
       const feed = useRooms.getState();
       if (feed.offset && feed.hasMore && feed.status === "idle" &&
-          body.scrollHeight - body.clientHeight - body.scrollTop <= 24) {
+          body.scrollHeight - body.clientHeight - body.scrollTop <= 160) {
         void loadPage(feed.offset);
       }
     };
@@ -434,8 +464,9 @@ export function LiveHubPage() {
     return () => window.clearTimeout(timer);
   }, [username, src, unlocked]);
 
-  const catalog = rooms.filter(room => !featured.some(item => item.username === room.username));
-  const visible = tab === "all" ? catalog : catalog.filter((item) => categoryOf(item.username) === tab);
+  const visiblePages = pages.map(page => page.filter(room =>
+    !featured.some(item => item.username === room.username) && (tab === "all" || categoryOf(room.username) === tab)
+  )).filter(page => page.length > 0);
   const openRoom = (item: Room) => {
     useRooms.setState({ scrollTop: content.current?.closest(".shell-body")?.scrollTop ?? 0 });
     navigate("/live-hub/" + encodeURIComponent(item.username), { state: { fromLiveHub: true } });
@@ -481,8 +512,10 @@ export function LiveHubPage() {
           ))}
         </div>
       )}
-      {!username && visible.length > 0 && <RoomRows rooms={visible} onOpen={openRoom} />}
-      {!username && rooms.length > 0 && visible.length === 0 && status !== "loading" && (
+      {!username && visiblePages.map(page =>
+        <RoomRows key={tab + "/" + page[0].username} rooms={page} onOpen={openRoom} />
+      )}
+      {!username && rooms.length > 0 && visiblePages.length === 0 && status !== "loading" && (
         <p className="hub-note">No rooms in this category right now.</p>
       )}
       {(!username || !offset) && status === "loading" && <p className="hub-note" role="status">Loading live rooms…</p>}

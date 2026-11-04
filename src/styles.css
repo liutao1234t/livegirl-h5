@@ -6850,7 +6850,7 @@ html.is-keyboard .sup-composer {
 
 .hub-rows { display: flex; flex-direction: column; gap: 9px; }
 .hub-split, .hub-pair { display: flex; gap: 12px; align-items: stretch; }
-.hub-split { height: 296px; }
+.hub-slot.is-split, .hub-split { height: 296px; }
 .hub-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 
 .hub-face.is-tall {
@@ -6869,20 +6869,23 @@ html.is-keyboard .sup-composer {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
+.hub-slot.is-wide { height: 142px; }
 .hub-face.is-wide {
-  height: 142px;
+  height: 100%;
   border-radius: 22px;
   border: 1px solid #c4ff3b;
   box-shadow: 0 0 20px rgba(236, 72, 153, 0.4);
 }
 
-.hub-list[data-category="all"] .hub-face.is-wide {
+.hub-list[data-category="all"] .hub-slot.is-wide {
   height: 180px;
 }
 
+.hub-slot.is-pair { height: 185px; }
+.hub-pair { height: 100%; }
 .hub-face.is-half {
   flex: 1;
-  height: 185px;
+  height: 100%;
   border-radius: 22px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
