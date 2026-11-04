@@ -180,7 +180,8 @@ function RoomPlayer({ room, src }: { room: Room; src: string }) {
   }, []);
   return (
     <div className="hub-stage" ref={stage}>
-      <iframe className="hub-player" style={{ width: 100 / scale + "%", height: 100 / scale + "%", transform: "scale(" + scale + ")" }} title={room.username} src={src}
+      <iframe className="hub-player" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+        style={{ width: 100 / scale + "%", height: 100 / scale + "%", transform: "scale(" + scale + ")" }} title={room.username} src={src}
         onLoad={() => setLoaded(true)} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />
       {!loaded && <div className="hub-cover" role="status">
         <img src={room.image_url_360x270} alt="" />

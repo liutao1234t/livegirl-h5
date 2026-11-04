@@ -6595,7 +6595,7 @@ html.is-keyboard .sup-composer {
 .hub-room strong { display: block; margin: 7px 0 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .hub-room small { opacity: .7; }
 .hub-room-view { position: relative; height: 100%; width: 100%; overflow: hidden; container-type: size; background: #17141b; }
-.hub-stage { position: relative; height: 100%; width: 100%; overflow: hidden; border-radius: 14px; background: #17141b; }
+.hub-stage { position: relative; height: 100%; width: 100%; overflow: hidden; background: #17141b; }
 @media (orientation: portrait) and (max-width: 768px) {
   .hub-stage { position: absolute; top: 0; left: 100%; width: 100cqh; height: 100cqw; transform: rotate(90deg); transform-origin: top left; }
 }
