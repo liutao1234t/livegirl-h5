@@ -1,3 +1,4 @@
+import { LiveHubFab } from "./LiveHubPage";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { type Girl } from "../data/girls";
@@ -160,6 +161,7 @@ export function HomePage() {
           ))}
         </div>
       </TabShell>
+      <LiveHubFab />
     </div>
   );
 }

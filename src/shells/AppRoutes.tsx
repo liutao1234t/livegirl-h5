@@ -73,7 +73,7 @@ export function AppRoutes({ location }: { location: Location }) {
         }
       />
       <Route
-        path="/live-hub"
+        path="/live-hub/:username?"
         element={
           <Gate>
             <LiveHubPage />

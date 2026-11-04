@@ -13,8 +13,8 @@ import { startSayHiDispatch, useSayHiStore } from "./store/sayHiStore";
 export function App() {
   useKeyboardInset();
   useEffect(() => {
-    consumeLiveHubReturn();
-    const onShow = () => consumeLiveHubReturn();
+    const onShow = () => { if (!/\/live-hub(?:\/|$)/.test(window.location.pathname)) consumeLiveHubReturn(); };
+    onShow();
     window.addEventListener("pageshow", onShow);
     void useHostsStore.getState().refreshHosts().then(() => {
       useSayHiStore.getState().ensureOnlineNow();
