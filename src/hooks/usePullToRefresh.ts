@@ -11,15 +11,18 @@ export function usePullToRefresh(scroller: RefObject<HTMLElement | null>, onRefr
   const onRefreshRef = useRef(onRefresh);
   onRefreshRef.current = onRefresh;
 
+  const enabled = Boolean(onRefresh);
   useEffect(() => {
     const el = scroller.current;
     const refresh = onRefreshRef.current;
     if (!el || !refresh) return;
 
+    let distance = 0;
     const onStart = (e: TouchEvent) => {
       if (refreshing) return;
       if (el.scrollTop > 0) return;
       startY.current = e.touches[0]?.clientY ?? 0;
+      distance = 0;
       pulling.current = true;
     };
 
@@ -28,24 +31,27 @@ export function usePullToRefresh(scroller: RefObject<HTMLElement | null>, onRefr
       const y = e.touches[0]?.clientY ?? 0;
       const dy = y - startY.current;
       if (el.scrollTop > 0 || dy <= 0) {
-        if (pulling.current && dy <= 0) setPull(0);
+        distance = 0;
+        setPull(0);
         return;
       }
       e.preventDefault();
-      setPull(Math.min(dy * 0.42, MAX));
+      distance = Math.min(dy * 0.42, MAX);
+      setPull(distance);
     };
 
     const onEnd = () => {
       if (!pulling.current) return;
       pulling.current = false;
-      setPull((current) => {
-        if (current < ARM) return 0;
-        setRefreshing(true);
-        void refresh().finally(() => {
-          setRefreshing(false);
-          setPull(0);
-        });
-        return ARM;
+      if (distance < ARM) {
+        setPull(0);
+        return;
+      }
+      setPull(ARM);
+      setRefreshing(true);
+      void refresh().finally(() => {
+        setRefreshing(false);
+        setPull(0);
       });
     };
 
@@ -59,7 +65,7 @@ export function usePullToRefresh(scroller: RefObject<HTMLElement | null>, onRefr
       el.removeEventListener("touchend", onEnd);
       el.removeEventListener("touchcancel", onEnd);
     };
-  }, [scroller, refreshing]);
+  }, [scroller, refreshing, enabled]);
 
   return { pull, refreshing };
 }

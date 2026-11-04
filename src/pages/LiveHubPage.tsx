@@ -129,24 +129,26 @@ const initialFeed = {
 let generation = 0;
 const useRooms = create(() => initialFeed);
 
-async function loadNextPage() {
+async function loadNextPage(refresh = false) {
   const feed = useRooms.getState();
-  if (!feed.hasMore || feed.status === "loading") return;
+  if (!refresh && (!feed.hasMore || feed.status === "loading")) return;
+  if (refresh) generation++;
+  const start = refresh ? initialFeed : feed;
   useRooms.setState({ status: "loading" });
   const requestId = generation;
   try {
     const params = new URLSearchParams({
-      wm: "jqpA8", client_ip: "request_ip", limit: String(PAGE_SIZE), offset: String(feed.offset),
+      wm: "jqpA8", client_ip: "request_ip", limit: String(PAGE_SIZE), offset: String(start.offset),
     });
     const response = await fetch("https://chaturbate.com/api/public/affiliates/onlinerooms/?" + params);
     if (!response.ok) throw new Error("Room list unavailable");
     const { results, count } = await response.json() as { results: Room[]; count: number };
     if (requestId !== generation) return;
-    const rooms = new Map(feed.rooms.map(room => [room.username, room]));
+    const rooms = new Map(start.rooms.map(room => [room.username, room]));
     for (const room of results) {
       if (room.current_show === "public" && room.iframe_embed) rooms.set(room.username, room);
     }
-    const offset = feed.offset + results.length;
+    const offset = start.offset + results.length;
     useRooms.setState({ rooms: [...rooms.values()], offset, hasMore: results.length > 0 && offset < count, status: "idle" });
   } catch {
     if (requestId === generation) useRooms.setState({ status: "failed" });
@@ -160,16 +162,25 @@ function playerSource(room: Room) {
   if (!src) return;
   const url = new URL(src, "https://chaturbate.com");
   if (url.protocol === "https:" && (url.hostname === "chaturbate.com" || url.hostname.endsWith(".chaturbate.com"))) {
-    url.searchParams.set("embed_video_only", "1");
+    url.searchParams.set("embed_video_only", "0");
     return url.href;
   }
 }
 
 function RoomPlayer({ room, src }: { room: Room; src: string }) {
   const [loaded, setLoaded] = useState(false);
+  const stage = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setScale(Math.min(1, el.clientWidth / 850)));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   return (
-    <div className="hub-stage">
-      <iframe className="hub-player" title={room.username} src={src}
+    <div className="hub-stage" ref={stage}>
+      <iframe className="hub-player" style={{ width: 100 / scale + "%", height: 100 / scale + "%", transform: "scale(" + scale + ")" }} title={room.username} src={src}
         onLoad={() => setLoaded(true)} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />
       {!loaded && <div className="hub-cover" role="status">
         <img src={room.image_url_360x270} alt="" />
@@ -203,8 +214,8 @@ export function LiveHubPage() {
   const room = rooms?.find(item => item.username === username);
   const src = room && playerSource(room);
 
-  return <StackShell header={<StackBar title={username ?? "Live Hub"} />}>
-    <div className="hub-content" ref={content}>
+  return <StackShell onRefresh={username ? undefined : () => loadNextPage(true)} header={<StackBar title={username ?? "Live Hub"} />}>
+    <div className={username ? "hub-room-view" : "hub-content"} ref={content}>
       {username && room && src && <RoomPlayer key={src} room={room} src={src} />}
       {username && !src && (offset > 0 || !hasMore) && <p>This room is unavailable.</p>}
       {!username && rooms.length > 0 && <><h2>Live now</h2><div className="hub-grid">{rooms.map(item =>
@@ -218,7 +229,7 @@ export function LiveHubPage() {
       )}</div></>}
       {!username && hasMore && <div ref={sentinel} style={{ height: 1 }} />}
       {(!username || !offset) && status === "loading" && <p role="status">Loading live rooms…</p>}
-      {(!username || !offset) && status === "failed" && <p role="alert">Couldn’t load rooms. <button onClick={loadNextPage}>Try again</button></p>}
+      {(!username || !offset) && status === "failed" && <p role="alert">Couldn’t load rooms. <button onClick={() => loadNextPage()}>Try again</button></p>}
       {!username && !hasMore && <p>{rooms.length ? "You’ve reached the end." : "No public rooms are live right now."}</p>}
     </div>
   </StackShell>;

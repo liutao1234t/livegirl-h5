@@ -98,15 +98,24 @@ export function StackShell({
   header,
   children,
   footer,
+  onRefresh,
 }: {
   header?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
+  onRefresh?: () => Promise<unknown>;
 }) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const { pull, refreshing } = usePullToRefresh(bodyRef, onRefresh);
   return (
     <div className="shell-stack">
       {header ? <div className="shell-top stack-top">{header}</div> : null}
-      <div className="shell-body">{children}</div>
+      <div className="shell-body" ref={bodyRef}>
+        {onRefresh && <div className="ptr-slot" style={{ height: refreshing ? 56 : pull }} aria-hidden>
+          <span className={`ptr-spinner ${refreshing || pull > 40 ? "is-on" : ""}`} />
+        </div>}
+        {children}
+      </div>
       {footer}
     </div>
   );
