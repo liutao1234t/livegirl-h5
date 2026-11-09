@@ -12,7 +12,7 @@ import {
 import { type ChatMsg } from "../data/messages";
 import type { IapRequest } from "../data/iap";
 import { gifts, NEWBIE_COINS } from "../data/shop";
-import { loginH5User, reportH5CoinChange, reportH5Purchase, reportH5RateStatus } from "../data/h5AccountRepo";
+import { loginH5User, reportH5CoinChange, reportH5Purchase, reportH5RateStatus, reportH5UserBehavior } from "../data/h5AccountRepo";
 import {
   consumeStarter,
   freshDeviceNewbie,
@@ -189,6 +189,76 @@ function shouldPromptNewMessage(overlay: OverlayId, activeCall: ActiveCall | nul
 
 type Threads = Record<string, ChatMsg[]>;
 
+export type UserBehavior = {
+  loginDays: number;
+  lastLoginDay: string | null;
+  viewedProfileHostIds: string[];
+  paidCalledHostIds: string[];
+  paidCalledTotalSec: number;
+  freeCalledHostIds: string[];
+  freeCalledTotalSec: number;
+  liveHubRoomIds: string[];
+  liveHubWatchTotalSec: number;
+};
+
+function emptyBehavior(): UserBehavior {
+  return {
+    loginDays: 0,
+    lastLoginDay: null,
+    viewedProfileHostIds: [],
+    paidCalledHostIds: [],
+    paidCalledTotalSec: 0,
+    freeCalledHostIds: [],
+    freeCalledTotalSec: 0,
+    liveHubRoomIds: [],
+    liveHubWatchTotalSec: 0,
+  };
+}
+
+function idList(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  const ids = value.filter((item) => typeof item === "string" && item.trim()).map((item) => item.trim());
+  return [...new Set(ids)];
+}
+
+function countOf(value: unknown) {
+  const count = Math.floor(Number(value));
+  return Number.isFinite(count) && count >= 0 ? count : 0;
+}
+
+export function normalizeUserBehavior(value: unknown): UserBehavior {
+  const raw = value && typeof value === "object" ? (value as Partial<UserBehavior>) : {};
+  return {
+    loginDays: countOf(raw.loginDays),
+    lastLoginDay: typeof raw.lastLoginDay === "string" && raw.lastLoginDay.trim() ? raw.lastLoginDay : null,
+    viewedProfileHostIds: idList(raw.viewedProfileHostIds),
+    paidCalledHostIds: idList(raw.paidCalledHostIds),
+    paidCalledTotalSec: countOf(raw.paidCalledTotalSec),
+    freeCalledHostIds: idList(raw.freeCalledHostIds),
+    freeCalledTotalSec: countOf(raw.freeCalledTotalSec),
+    liveHubRoomIds: idList(raw.liveHubRoomIds),
+    liveHubWatchTotalSec: countOf(raw.liveHubWatchTotalSec),
+  };
+}
+
+function withHost(ids: string[], id: string) {
+  return ids.includes(id) ? ids : [...ids, id];
+}
+
+function behaviorAfterCall(behavior: UserBehavior, call: ActiveCall | null, girlId: string, durationSec: number) {
+  if (!call || call.girlId !== girlId) return behavior;
+  const sec = Math.max(0, Math.floor(durationSec));
+  if (call.isFree) {
+    const freeCalledHostIds = withHost(behavior.freeCalledHostIds, girlId);
+    if (freeCalledHostIds === behavior.freeCalledHostIds && sec === 0) return behavior;
+    return { ...behavior, freeCalledHostIds, freeCalledTotalSec: behavior.freeCalledTotalSec + sec };
+  }
+  if (call.isPass || call.ratePerMin <= 0) return behavior;
+  const paidCalledHostIds = withHost(behavior.paidCalledHostIds, girlId);
+  if (paidCalledHostIds === behavior.paidCalledHostIds && sec === 0) return behavior;
+  return { ...behavior, paidCalledHostIds, paidCalledTotalSec: behavior.paidCalledTotalSec + sec };
+}
+
 type AppState = {
   userId: string | null;
   accessToken: string | null;
@@ -224,6 +294,7 @@ type AppState = {
   lastFreeCallDate: string | null;
   calledGirlIds: string[];
   viewedHostIds: string[];
+  behavior: UserBehavior;
   activeCall: ActiveCall | null;
   supportMessages: SupportMsg[];
   supportBusy: boolean;
@@ -258,6 +329,9 @@ type AppState = {
   claimDaily: () => void;
   claimRate: () => void;
   claimWelcome: () => void;
+  noteViewedProfileHost: (hostId: string) => void;
+  noteLiveHubJoin: (roomId: string) => void;
+  addLiveHubWatch: (seconds: number) => void;
 };
 
 const guestProfile: ProfileDraft = {
@@ -305,6 +379,7 @@ function blankProgress(userId: string | null) {
     lastFreeCallDate: null as string | null,
     calledGirlIds: [] as string[],
     viewedHostIds: [] as string[],
+    behavior: emptyBehavior(),
     activeCall: null as ActiveCall | null,
     supportMessages: [supportWelcomeMsg()],
     supportBusy: false,
@@ -323,6 +398,32 @@ let holdCoinReport = false;
 function publishCoinRemain(userId: string | null, remaincoin: number) {
   if (!userId) return;
   reportH5CoinChange({ userid: userId, remaincoin });
+}
+
+function publishBehavior(userId: string | null) {
+  if (!userId) return;
+  const behavior = normalizeUserBehavior(useAppStore.getState().behavior);
+  reportH5UserBehavior({
+    userid: userId,
+    LoginDays: behavior.loginDays,
+    viewHostProfileCount: behavior.viewedProfileHostIds.length,
+    PaidCalledHostCount: behavior.paidCalledHostIds.length,
+    PaidCalledTotalTime: behavior.paidCalledTotalSec,
+    FreeCalledHostCount: behavior.freeCalledHostIds.length,
+    FreeCalledTotalTime: behavior.freeCalledTotalSec,
+    LiveHubLiveRoomJoinCount: behavior.liveHubRoomIds.length,
+    LiveHubLiveWatchTotalTime: behavior.liveHubWatchTotalSec,
+  });
+}
+
+function recordLoginDay() {
+  const behavior = normalizeUserBehavior(useAppStore.getState().behavior);
+  const today = todayKey();
+  if (behavior.lastLoginDay === today) return;
+  useAppStore.setState({
+    behavior: { ...behavior, loginDays: behavior.loginDays + 1, lastLoginDay: today },
+  });
+  publishBehavior(useAppStore.getState().userId);
 }
 
 function publishRateStatus(userId: string | null) {
@@ -513,7 +614,10 @@ export const useAppStore = create<AppState>()(
       finishCall: (girlId, durationSec, title) => {
         const call = get().activeCall;
         const spent = call?.girlId === girlId ? call.spent : 0;
+        const prevBehavior = normalizeUserBehavior(get().behavior);
+        const behavior = behaviorAfterCall(prevBehavior, call, girlId, durationSec);
         set({
+          behavior,
           activeCall: null,
           giftFx: null,
           lastCall: { girlId, durationSec: Math.max(0, durationSec), coinsSpent: spent },
@@ -522,6 +626,7 @@ export const useAppStore = create<AppState>()(
               ? [{ id: `${Date.now()}`, title, at: stamp(), amount: -spent, kind: "out" }, ...get().bills]
               : get().bills,
         });
+        if (behavior !== prevBehavior) publishBehavior(get().userId);
       },
       startSession: () => {
         if (startSessionJob) return startSessionJob;
@@ -550,6 +655,7 @@ export const useAppStore = create<AppState>()(
                 registeredAt: login?.createdAtMs ?? resolveRegisteredAt(userId),
               });
               if (get().coins !== coinsBefore) publishCoinRemain(userId, get().coins);
+              recordLoginDay();
             } finally {
               holdCoinReport = false;
             }
@@ -562,6 +668,7 @@ export const useAppStore = create<AppState>()(
             accessToken: login?.accessToken ?? get().accessToken ?? null,
             registeredAt: login?.createdAtMs ?? get().registeredAt ?? resolveRegisteredAt(existingId),
           });
+          recordLoginDay();
         })().finally(() => {
           startSessionJob = null;
         });
@@ -852,6 +959,29 @@ export const useAppStore = create<AppState>()(
           deviceNewbie: { ...get().deviceNewbie, seenWelcome: true },
         });
       },
+      noteViewedProfileHost: (hostId) => {
+        const id = hostId.trim();
+        if (!id) return;
+        const behavior = normalizeUserBehavior(get().behavior);
+        if (behavior.viewedProfileHostIds.includes(id)) return;
+        set({ behavior: { ...behavior, viewedProfileHostIds: [...behavior.viewedProfileHostIds, id] } });
+        publishBehavior(get().userId);
+      },
+      noteLiveHubJoin: (roomId) => {
+        const id = roomId.trim();
+        if (!id) return;
+        const behavior = normalizeUserBehavior(get().behavior);
+        if (behavior.liveHubRoomIds.includes(id)) return;
+        set({ behavior: { ...behavior, liveHubRoomIds: [...behavior.liveHubRoomIds, id] } });
+        publishBehavior(get().userId);
+      },
+      addLiveHubWatch: (seconds) => {
+        const add = Math.floor(seconds);
+        if (!Number.isFinite(add) || add <= 0) return;
+        const behavior = normalizeUserBehavior(get().behavior);
+        set({ behavior: { ...behavior, liveHubWatchTotalSec: behavior.liveHubWatchTotalSec + add } });
+        publishBehavior(get().userId);
+      },
       submitAppleSupport: () => set({ appleSupportSubmitted: true }),
       clearAppleSupport: () => set({ appleSupportSubmitted: false }),
       resetAccount: (mode) => {
@@ -920,6 +1050,7 @@ export const useAppStore = create<AppState>()(
         lastFreeCallDate: s.lastFreeCallDate,
         calledGirlIds: s.calledGirlIds,
         viewedHostIds: s.viewedHostIds,
+        behavior: s.behavior,
         supportMessages: s.supportMessages,
       }),
       onRehydrateStorage: () => (state) => {
@@ -976,12 +1107,13 @@ export const useAppStore = create<AppState>()(
         if (!Array.isArray(state.viewedHostIds)) {
           useAppStore.setState({ viewedHostIds: [] });
         }
+        useAppStore.setState({ behavior: normalizeUserBehavior(state.behavior) });
         if (state.userId) {
           void loginH5User(state.userId);
         }
         coinReportArmed = true;
       },
-      version: 13,
+      version: 14,
       migrate: (persisted, fromVersion) => {
         const next = { ...(persisted as Record<string, unknown>) };
         if (fromVersion < 2) {
@@ -1035,6 +1167,9 @@ export const useAppStore = create<AppState>()(
         }
         if (fromVersion < 13) {
           next.liveHubUnlocked = false;
+        }
+        if (fromVersion < 14) {
+          next.behavior = emptyBehavior();
         }
         return next as typeof persisted;
       },

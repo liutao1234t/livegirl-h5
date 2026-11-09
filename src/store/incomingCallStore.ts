@@ -227,6 +227,7 @@ export function noteProfileView(girlId: string) {
   const prev = useAppStore.getState().viewedHostIds ?? [];
   const viewedHostIds = [...prev, id];
   useAppStore.setState({ viewedHostIds });
+  useAppStore.getState().noteViewedProfileHost(id);
   if (viewedHostIds.length % 3 === 0) scheduleRing();
 }
 

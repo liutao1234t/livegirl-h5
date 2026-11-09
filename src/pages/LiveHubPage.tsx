@@ -203,6 +203,7 @@ function RoomPlayer({ room, src }: { room: Room; src: string }) {
   const [loaded, setLoaded] = useState(false);
   const stage = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  const play = useRef<{ startedAt: number } | null>(null);
   useEffect(() => {
     const el = stage.current;
     if (!el) return;
@@ -210,11 +211,26 @@ function RoomPlayer({ room, src }: { room: Room; src: string }) {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+  useEffect(() => {
+    return () => {
+      const session = play.current;
+      if (!session) return;
+      play.current = null;
+      const add = Math.floor((Date.now() - session.startedAt) / 1000);
+      if (add > 0) useAppStore.getState().addLiveHubWatch(add);
+    };
+  }, [room.username, src]);
+  const onPlayerLoad = () => {
+    setLoaded(true);
+    if (play.current) return;
+    play.current = { startedAt: Date.now() };
+    useAppStore.getState().noteLiveHubJoin(room.username);
+  };
   return (
     <div className="hub-stage" ref={stage}>
       <iframe className="hub-player" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
         style={{ width: 100 / scale + "%", height: 100 / scale + "%", transform: "scale(" + scale + ")" }} title={room.username} src={src}
-        onLoad={() => setLoaded(true)} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />
+        onLoad={onPlayerLoad} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />
       {!loaded && <div className="hub-cover" role="status">
         <img src={room.image_url_360x270} alt="" />
         <div>Loading live room…<progress aria-label="Loading live room" /></div>
