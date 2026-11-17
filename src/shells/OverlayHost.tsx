@@ -594,7 +594,9 @@ function Reward3Card() {
           <p className="reward3-num">
             <span>0</span>
           </p>
-          <p className="reward3-unit">Coin/min</p>
+          <p className="reward3-unit">
+            <span>Coin/min</span>
+          </p>
           <span className="reward3-sparks" aria-hidden>
             <i />
             <i />

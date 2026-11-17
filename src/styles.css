@@ -3107,13 +3107,24 @@ html.is-keyboard .composer {
 }
 
 .reward3-unit {
-  left: 173px;
-  top: 79px;
+  left: 161px;
+  top: 69px;
+  padding: 8px 10px;
+  filter: drop-shadow(0 0 6px rgba(255, 70, 141, 0.7));
+}
+
+.reward3-unit span {
+  display: block;
+  padding: 0.06em 0.12em;
   font-size: 28px;
   font-weight: 500;
-  line-height: 34px;
+  font-style: italic;
+  line-height: 1;
   background-image: linear-gradient(180deg, #fff7de 0%, #ffdba5 100%);
-  filter: drop-shadow(0 0 6px rgba(255, 70, 141, 0.7));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 .reward3-sparks {
