@@ -11,10 +11,10 @@ import { StackBar } from "../shells/StackBar";
 const BROWSE_MS = 30_000;
 const FAB = 70;
 
-const benefits = [
-  { mark: "∞", text: "Unlimited live viewing" },
-  { mark: "♧", text: "Access to more live rooms" },
-  { mark: "♛", text: "VIP-only content" },
+const perks = [
+  { icon: "/icons/livehub-unlock-infinity.svg", w: 50.2414, h: 31.7674, lines: ["Unlimited", "Viewing"] },
+  { icon: "/icons/livehub-unlock-rooms.svg", w: 42.3682, h: 41.6542, lines: ["More", "Live Rooms"] },
+  { icon: "/icons/livehub-unlock-vip.svg", w: 45.629, h: 39.5209, lines: ["VIP", "Content"] },
 ] as const;
 
 export function LiveHubFab() {
@@ -566,32 +566,61 @@ export function LiveHubUnlock() {
 
   return (
     <div className="livehub-gate">
-      <button type="button" className="livehub-back press" aria-label="Back" onClick={dismiss}>
-        <img src={publicUrl("/icons/livehub-back.svg")} alt="" width={16} height={16} />
-      </button>
       <div className="livehub-card">
-        <button type="button" className="livehub-x press" aria-label="Close" onClick={dismiss}>
-          <img src={publicUrl("/icons/livehub-close.svg")} alt="" width={12} height={12} />
-        </button>
-        <p className="livehub-kicker">♛ LIVEHUB VIP</p>
-        <img className="livehub-art" src={publicUrl("/images/livehub-locked.png")} alt="" />
-        <h2 id="livehub-title">Unlock VIP</h2>
-        <p className="livehub-keep">Keep Watching</p>
-        <ul className="livehub-benefits">
-          {benefits.map((item) => (
-            <li key={item.text}>
-              <span aria-hidden="true">{item.mark}</span>
-              {item.text}
+        <div className="livehub-brand">
+          <img src={publicUrl("/icons/livehub-unlock-crown.svg")} alt="" width={29.2044} height={23.7589} />
+          <span>LIVE HUB</span>
+          <button type="button" className="livehub-x press" aria-label="Close" onClick={dismiss}>
+            <img src={publicUrl("/icons/livehub-unlock-close.svg")} alt="" width={11.6667} height={11.6667} />
+          </button>
+        </div>
+        <div className="livehub-hero">
+          <img className="livehub-art" src={publicUrl("/images/livehub-unlock-hero.png")} alt="" />
+          <span className="livehub-live">
+            <img src={publicUrl("/icons/livehub-unlock-live-dot.svg")} alt="" width={8.98596} height={8.4476} />
+            LIVE
+          </span>
+          <span className="livehub-watch">
+            <img src={publicUrl("/icons/livehub-unlock-eye.svg")} alt="" width={15.1638} height={10.0315} />
+            12.4K
+          </span>
+        </div>
+        <h2 id="livehub-title">
+          Unlock
+          <em>
+            Club
+            <img className="livehub-doodle" src={publicUrl("/icons/livehub-unlock-crown-doodle.svg")} alt="" width={27.5195} height={24.8148} />
+          </em>
+        </h2>
+        <p className="livehub-keep">
+          <i />
+          Keep Watching Live
+          <i />
+        </p>
+        <ul className="livehub-perks">
+          {perks.map((item) => (
+            <li key={item.lines[1]}>
+              <span className="livehub-perk-icon">
+                <img src={publicUrl(item.icon)} alt="" width={item.w} height={item.h} />
+              </span>
+              <span>
+                {item.lines[0]}
+                <br />
+                {item.lines[1]}
+              </span>
             </li>
           ))}
         </ul>
-        <p className="livehub-price">
-          $19.99 <s>$49.99</s>
-        </p>
-        <button type="button" className="livehub-cta press" disabled={payBusy} onClick={buy}>
-          GET NOW
-          <img src={publicUrl("/icons/livehub-arrow.svg")} alt="" width={12} height={12} />
-        </button>
+        <div className="livehub-offer">
+          <span className="livehub-save">Save 60%</span>
+          <p className="livehub-price">
+            $19.99 <s>$49.99</s>
+          </p>
+          <button type="button" className="livehub-cta press" disabled={payBusy} onClick={buy}>
+            JOIN CLUB
+            <img src={publicUrl("/icons/livehub-unlock-arrow.svg")} alt="" width={15.1638} height={12.6714} />
+          </button>
+        </div>
       </div>
     </div>
   );

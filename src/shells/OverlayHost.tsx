@@ -87,13 +87,14 @@ export function OverlayHost() {
   const isSheet = shown === "gift" || shown === "coins";
   const isBanner = shown === "newMsg";
   const isLiveHub = shown === "livehub";
+  const isReward3 = shown === "reward3";
 
   return (
     <>
       {!shown ? (
         <div className="overlay-root" />
       ) : (
-    <div className={`overlay-root${isBanner ? " is-toast" : " is-open"}${isSheet ? " is-sheet" : ""}${leaving ? " is-leaving" : ""}`}>
+    <div className={`overlay-root${isBanner ? " is-toast" : " is-open"}${isSheet ? " is-sheet" : ""}${isReward3 ? " is-reward3" : ""}${leaving ? " is-leaving" : ""}`}>
       {isLiveHub ? <LiveHubUnlock /> : null}
       {isBanner || isLiveHub ? null : <button className="overlay-mask" aria-label="Close" onClick={leaving ? undefined : close} />}
       {isLiveHub ? null : isSheet ? (
@@ -562,6 +563,8 @@ function Reward3Card() {
   const payBusy = useAppStore((s) => s.payBusy);
   const buyReward3 = useAppStore((s) => s.buyReward3);
   const startPurchase = useAppStore((s) => s.startPurchase);
+  const glowMask = publicUrl("/reward3/glow-mask.svg");
+  const stageMask = publicUrl("/reward3/stage-mask.svg");
 
   const onBuy = () => {
     if (payBusy) return;
@@ -573,29 +576,55 @@ function Reward3Card() {
 
   return (
     <div className="overlay-card is-reward3" role="dialog" aria-labelledby="reward3-title">
-      <OverlayClose variant="reward3" />
-      <p className="reward3-kicker">LIMITED BONUS</p>
-      <div className="reward3-hero" aria-hidden>
-        <span className="reward3-num">3</span>
+      <div className="reward3-fit">
+        <div className="reward3-board">
+          <div
+            className="reward3-glow"
+            aria-hidden
+            style={{ maskImage: `url("${glowMask}")`, WebkitMaskImage: `url("${glowMask}")` }}
+          >
+            <img src={publicUrl("/reward3/art.png")} alt="" />
+          </div>
+          <img className="reward3-ring" src={publicUrl("/reward3/neon-ring.svg")} alt="" />
+          <p className="reward3-kicker">
+            <span />
+            LIMITED BONUS
+            <span />
+          </p>
+          <p className="reward3-num">
+            <span>0</span>
+          </p>
+          <p className="reward3-unit">Coin/min</p>
+          <span className="reward3-sparks" aria-hidden>
+            <i />
+            <i />
+            <i />
+          </span>
+          <div
+            className="reward3-stage"
+            aria-hidden
+            style={{ maskImage: `url("${stageMask}")`, WebkitMaskImage: `url("${stageMask}")` }}
+          >
+            <img src={publicUrl("/reward3/art.png")} alt="" />
+          </div>
+          <h2 id="reward3-title" className="reward3-line is-calls">
+            Free Video Calls
+          </h2>
+          <p className="reward3-line is-days">
+            for <em>3 Days</em>
+          </p>
+          <span className="reward3-underline" aria-hidden />
+          <p className="reward3-price">
+            <s>$29.99</s>
+            <span aria-hidden>|</span>
+            <strong>Just $19.99</strong>
+          </p>
+          <button className="reward3-cta press" type="button" onClick={onBuy}>
+            GET IT NOW →
+          </button>
+          <OverlayClose variant="reward3" />
+        </div>
       </div>
-      <h2 id="reward3-title">Unlimited Calls for 3 Days</h2>
-      <p>
-        Enjoy LiveGirl Premium
-        <br />
-        with no limits.
-      </p>
-      <p className="reward3-price">
-        Just $19.99 <s>$49.99</s>
-      </p>
-      <button className="btn-primary press" type="button" onClick={onBuy}>
-        GET IT NOW
-        <span className="icon-box" style={{ width: 12, height: 12 }}>
-          <img className="icon" src={publicUrl("/icons/arrow.svg")} alt="" />
-        </span>
-      </button>
-      <button className="overlay-later press" type="button" onClick={close}>
-        Maybe later
-      </button>
     </div>
   );
 }
