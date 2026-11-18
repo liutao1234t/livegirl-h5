@@ -4,8 +4,9 @@ import { getGirl } from "../data/girls";
 import { StackBar } from "../shells/StackBar";
 import { StackShell } from "../shells/Shells";
 import { publicUrl } from "../lib/publicUrl";
+import { t, type MessageKey } from "../i18n";
 
-const reasons = ["Inappropriate Content", "Harassment", "Spam", "Impersonation", "Other"];
+const reasons = ["report.inappropriate", "report.harassment", "report.spam", "report.impersonation", "report.other"] as const satisfies readonly MessageKey[];
 
 export function ReportPage() {
   const { id = "isabella" } = useParams();
@@ -18,7 +19,7 @@ export function ReportPage() {
 
   return (
     <StackShell
-      header={<StackBar title="Report" />}
+      header={<StackBar title={t("report.title")} />}
       footer={
         done ? null : (
           <div className="report-foot">
@@ -31,7 +32,7 @@ export function ReportPage() {
               <span className="icon-box" style={{ width: 15, height: 17 }}>
                 <img className="icon" src={publicUrl("/icons/report-flag.svg")} alt="" />
               </span>
-              Submit Report
+              {t("report.submit")}
             </button>
           </div>
         )
@@ -40,9 +41,9 @@ export function ReportPage() {
       <div className="stk-pad report-page">
         {done ? (
           <>
-            <p>Thanks. We received your report about {girl.name}.</p>
+            <p>{t("report.thanks", { name: girl.name })}</p>
             <button className="btn-primary press" type="button" onClick={() => navigate(-1)}>
-              Done
+              {t("common.done")}
             </button>
           </>
         ) : (
@@ -50,11 +51,11 @@ export function ReportPage() {
             <div className="report-target">
               <img src={girl.avatar} alt="" />
               <span>
-                <strong>Reporting @{handle}</strong>
-                <small>We'll keep this strictly confidential.</small>
+                <strong>{t("report.reporting", { name: handle })}</strong>
+                <small>{t("report.private")}</small>
               </span>
             </div>
-            <h2 className="report-h">Select a reason</h2>
+            <h2 className="report-h">{t("report.reason")}</h2>
             <div className="report-reasons">
               {reasons.map((r, i) => (
                 <button
@@ -63,16 +64,16 @@ export function ReportPage() {
                   type="button"
                   onClick={() => setPick(i)}
                 >
-                  {r}
+                  {t(r)}
                   <span className={`radio ${pick === i ? "is-on" : ""}`} />
                 </button>
               ))}
             </div>
             <div className={`report-more ${pick < 0 ? "is-dim" : ""}`}>
-              <h3>Tell us more</h3>
+              <h3>{t("report.more")}</h3>
               <textarea
                 rows={4}
-                placeholder="Please provide any additional details to help us understand the issue..."
+                placeholder={t("report.placeholder")}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
@@ -81,7 +82,7 @@ export function ReportPage() {
               <span className="icon-box" style={{ width: 16, height: 22 }}>
                 <img className="icon" src={publicUrl("/icons/report-shield.svg")} alt="" />
               </span>
-              <p>Your report is anonymous and will be reviewed by our moderation team within 24 hours. We are committed to maintaining a safe, premium space for everyone.</p>
+              <p>{t("report.note")}</p>
             </aside>
           </>
         )}

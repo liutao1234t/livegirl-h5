@@ -1,13 +1,11 @@
 import type { NavigateFunction } from "react-router-dom";
 import { getGirl } from "../data/girls";
 import { isUsableVideoUrl } from "./media";
+import { t } from "../i18n";
 import { billedCallRate, isReward3Active, todayKey, useAppStore } from "../store/appStore";
 import { requestFrontCamera } from "./userCamera";
 
-export const NOT_ENOUGH_COINS = "Not enough coins";
-export const CALL_INSUFFICIENT_TOAST = "No enough Coins";
 export const FREE_CALL_SEC = 15;
-export const FREE_CALL_ENDS = "Free call ends.";
 export const FREE_REEL_COUNT = 8;
 
 export function isReelLocked(index: number) {
@@ -36,7 +34,7 @@ export function useCallRate(listRate: number) {
 }
 
 export function formatCallRate(ratePerMin: number) {
-  return ratePerMin > 0 ? `${ratePerMin}/min` : "Free";
+  return ratePerMin > 0 ? t("call.perMin", { n: ratePerMin }) : t("call.free");
 }
 
 export function canPlaceCall(ratePerMin: number, videoUrl?: string | null) {
@@ -62,7 +60,7 @@ export function openCoinShop(navigate: NavigateFunction, opts?: { replace?: bool
 
 export function showCallPaywall(navigate: NavigateFunction, opts?: { replace?: boolean }) {
   const { boughtNewbieOffer, openOverlay, showToast } = useAppStore.getState();
-  showToast(NOT_ENOUGH_COINS);
+  showToast(t("overlay.notEnough"));
   if (boughtNewbieOffer) navigate("/coins", { replace: opts?.replace });
   else openOverlay("promo");
 }

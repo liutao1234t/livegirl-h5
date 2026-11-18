@@ -8,9 +8,24 @@ import { OfferGiftButton, TabShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { useHostsStore } from "../store/hostsStore";
 import { publicUrl } from "../lib/publicUrl";
+import { t, type MessageKey } from "../i18n";
 
 const cats = ["Hot", "New", "Sexy", "Cute"] as const;
 const regions = ["Global", "America", "Europe", "Asia", "Africa", "Middle East"] as const;
+const catLabel: Record<(typeof cats)[number], MessageKey> = {
+  Hot: "home.hot",
+  New: "home.new",
+  Sexy: "home.sexy",
+  Cute: "home.cute",
+};
+const regionLabel: Record<(typeof regions)[number], MessageKey> = {
+  Global: "home.global",
+  America: "home.america",
+  Europe: "home.europe",
+  Asia: "home.asia",
+  Africa: "home.africa",
+  "Middle East": "home.middleEast",
+};
 
 function FitName({ name }: { name: string }) {
   const ref = useRef<HTMLHeadingElement>(null);
@@ -45,7 +60,7 @@ function Card({ girl, tall, onOpen, onCall }: { girl: Girl; tall?: boolean; onOp
       {girl.online ? (
         <div className="status-pill">
           <span className="dot" />
-          Online
+          {t("common.online")}
         </div>
       ) : null}
       <div className="meta">
@@ -60,7 +75,7 @@ function Card({ girl, tall, onOpen, onCall }: { girl: Girl; tall?: boolean; onOp
       <button
         className="fab-call press"
         type="button"
-        aria-label={`Call ${girl.name}`}
+        aria-label={t("home.call", { name: girl.name })}
         onClick={(e) => {
           e.stopPropagation();
           onCall();
@@ -130,7 +145,7 @@ export function HomePage() {
             <div className="chips">
               {cats.map((c) => (
                 <button key={c} className={`chip press ${cat === c ? "is-on" : ""}`} onClick={() => setCat(c)}>
-                  {c}
+                  {t(catLabel[c])}
                 </button>
               ))}
             </div>
@@ -140,7 +155,7 @@ export function HomePage() {
               </span>
               {regions.map((r) => (
                 <button key={r} className={`region press ${region === r ? "is-on" : ""}`} onClick={() => setRegion(r)}>
-                  {r}
+                  {t(regionLabel[r])}
                 </button>
               ))}
             </div>

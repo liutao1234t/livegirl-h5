@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { h5AppleAppId } from "../data/appClient";
 import { useAppStore } from "../store/appStore";
 
@@ -16,7 +17,7 @@ function isShareAbort(err: unknown) {
 async function copyAppLink() {
   try {
     await navigator.clipboard.writeText(appStoreUrl());
-    useAppStore.getState().showToast("Link copied");
+    useAppStore.getState().showToast(t("toast.copied"));
   } catch {
     /* still usable without a share target */
   }

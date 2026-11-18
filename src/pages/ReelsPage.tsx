@@ -8,6 +8,7 @@ import { TabShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { useReelsStore } from "../store/reelsStore";
 import { publicUrl } from "../lib/publicUrl";
+import { t } from "../i18n";
 
 function useReelsForeground(scrollerRef: RefObject<HTMLDivElement | null>) {
   const [paneShown, setPaneShown] = useState(true);
@@ -211,7 +212,7 @@ export function ReelsPage() {
                       <img className="icon" src={publicUrl("/icons/share.svg")} alt="" />
                     </span>
                   </span>
-                  Share
+                  {t("common.share")}
                 </button>
                 <button
                   className={`reel-act press ${liked[item.id] ? "is-on" : ""}`}
@@ -228,7 +229,7 @@ export function ReelsPage() {
                 <button
                   className="reel-call press"
                   type="button"
-                  aria-label={`Call ${item.name}`}
+                  aria-label={t("home.call", { name: item.name })}
                   onClick={() => tryDial(item.id, item.ratePerMin, navigate)}
                 >
                   <span className="icon-box" style={{ width: 27, height: 21 }}>

@@ -18,6 +18,7 @@ import {
   type OverlayId,
 } from "../store/appStore";
 import { publicUrl } from "../lib/publicUrl";
+import { formatCount, giftLabel, locale, t } from "../i18n";
 
 const NEW_MSG_HOLD_MS = 3000;
 const ACCOUNT_RESET_MS = 2000;
@@ -96,7 +97,7 @@ export function OverlayHost() {
       ) : (
     <div className={`overlay-root${isBanner ? " is-toast" : " is-open"}${isSheet ? " is-sheet" : ""}${isReward3 ? " is-reward3" : ""}${leaving ? " is-leaving" : ""}`}>
       {isLiveHub ? <LiveHubUnlock /> : null}
-      {isBanner || isLiveHub ? null : <button className="overlay-mask" aria-label="Close" onClick={leaving ? undefined : close} />}
+      {isBanner || isLiveHub ? null : <button className="overlay-mask" aria-label={t("common.close")} onClick={leaving ? undefined : close} />}
       {isLiveHub ? null : isSheet ? (
         <div className={`overlay-sheet ${leaving ? "is-out" : "is-in"}`} onAnimationEnd={onStageEnd}>
           {shown === "gift" ? <GiftSheet /> : null}
@@ -117,22 +118,22 @@ export function OverlayHost() {
           {shown === "promo" ? <PromoCard /> : null}
           {shown === "newMsg" ? <NewMsgCard /> : null}
           {shown === "insufficient" ? (
-            <CenterCard title="Not enough coins" copy="Top up to keep the conversation going." cta="Get coins" onCta={() => openCoinShop(navigate)} />
+            <CenterCard title={t("overlay.notEnough")} copy={t("overlay.topUp")} cta={t("coins.get")} onCta={() => openCoinShop(navigate)} />
           ) : null}
           {shown === "confirmLogout" ? (
             <CenterCard
-              title="Log Out"
-              copy="You’ll see the splash again. Progress stays on this device."
-              cta="Log Out"
+              title={t("settings.logout")}
+              copy={t("overlay.logoutCopy")}
+              cta={t("settings.logout")}
               danger
               onCta={() => runAccountReset("logout")}
             />
           ) : null}
           {shown === "confirmDelete" ? (
             <CenterCard
-              title="Delete Account"
-              copy="Chats, coins, and purchases on this device are erased. New-user perks you’ve already used won’t come back."
-              cta="Delete"
+              title={t("settings.delete")}
+              copy={t("overlay.deleteCopy")}
+              cta={t("overlay.deleteCta")}
               danger
               onCta={() => runAccountReset("delete")}
             />
@@ -150,7 +151,7 @@ export function OverlayHost() {
 
 function BusyLoading() {
   return (
-    <div className="overlay-root is-open is-pay" role="alertdialog" aria-busy="true" aria-label="Loading">
+    <div className="overlay-root is-open is-pay" role="alertdialog" aria-busy="true" aria-label={t("common.loading")}>
       <div className="pay-loading">
         <span className="pay-spinner" />
       </div>
@@ -220,7 +221,7 @@ function NewMsgCard() {
   const girlId = overlayGirlId ?? "";
   const girl = getGirl(girlId);
   const last = [...(threads[girlId] ?? [])].reverse().find((m) => m.from === "them");
-  const preview = last?.text ? `${girl.name}: ${last.text}` : "Tap to open chat";
+  const preview = last?.text ? `${girl.name}: ${last.text}` : t("messages.tapChat");
 
   if (!girlId) return null;
 
@@ -242,10 +243,10 @@ function NewMsgCard() {
       <span className="newmsg-body">
         <span className="newmsg-top">
           <span className="newmsg-app">Lounge</span>
-          <time className="newmsg-time">now</time>
+          <time className="newmsg-time">{t("common.now")}</time>
         </span>
         <strong id="newmsg-title" className="newmsg-title">
-          New Message
+          {t("messages.new")}
         </strong>
         <span className="newmsg-preview">{preview}</span>
       </span>
@@ -256,7 +257,7 @@ function NewMsgCard() {
 function CenterCard({
   title,
   copy,
-  cta = "Close",
+  cta = t("common.close"),
   danger,
   onCta,
 }: {
@@ -299,16 +300,16 @@ function GiftSheet() {
   const selected = gifts.find((g) => g.id === pick) ?? gifts[0];
 
   return (
-    <div className="sheet" role="dialog" aria-label="Gifts">
+    <div className="sheet" role="dialog" aria-label={t("gift.aria")}>
       <header className="sheet-head">
-        <h2>Gifts</h2>
+        <h2>{t("gift.aria")}</h2>
         <span className="sheet-coins">
           <img src={publicUrl("/images/coin.png")} alt="" />
-          {coins.toLocaleString()}
+          {formatCount(coins)}
           <button
             className="sheet-plus press"
             type="button"
-            aria-label="Get coins"
+            aria-label={t("coins.get")}
             onClick={() => openCoinShop(navigate)}
           >
             <span className="icon-box" style={{ width: 10, height: 10 }}>
@@ -316,7 +317,7 @@ function GiftSheet() {
             </span>
           </button>
         </span>
-        <button className="sheet-x press" type="button" aria-label="Close" onClick={close}>
+        <button className="sheet-x press" type="button" aria-label={t("common.close")} onClick={close}>
           <span className="icon-box" style={{ width: 14, height: 14 }}>
             <img className="icon" src={publicUrl("/icons/sheet-close.svg")} alt="" />
           </span>
@@ -340,7 +341,7 @@ function GiftSheet() {
             <span className="gift-ico">
               <img src={g.icon} alt="" />
             </span>
-            <strong>{g.name}</strong>
+            <strong>{giftLabel(g.id)}</strong>
             <small>
               <img src={publicUrl("/images/coin.png")} alt="" />
               {g.cost}
@@ -356,7 +357,7 @@ function GiftSheet() {
           if (sendGift(overlayGirlId, selected.id)) close();
         }}
       >
-        Send Gift
+        {t("gift.send")}
         <span className="icon-box" style={{ width: 16, height: 13 }}>
           <img className="icon" src={publicUrl("/icons/sheet-send.svg")} alt="" />
         </span>
@@ -370,23 +371,23 @@ function CoinsSheet() {
   const coins = useAppStore((s) => s.coins);
 
   return (
-    <div className="sheet is-coins" role="dialog" aria-label="Coins">
+    <div className="sheet is-coins" role="dialog" aria-label={t("coins.aria")}>
       <header className="sheet-head">
-        <h2>COINS</h2>
+        <h2>{t("coins.word")}</h2>
         <span className="sheet-coins">
           <img src={publicUrl("/images/coin.png")} alt="" />
-          {coins.toLocaleString()}
+          {formatCount(coins)}
         </span>
-        <button className="sheet-x press" type="button" aria-label="Close" onClick={close}>
+        <button className="sheet-x press" type="button" aria-label={t("common.close")} onClick={close}>
           <span className="icon-box" style={{ width: 14, height: 14 }}>
             <img className="icon" src={publicUrl("/icons/sheet-close.svg")} alt="" />
           </span>
         </button>
       </header>
       <p className="coins-lead">
-        Top up your balance to continue the
+        {t("coins.lead1")}
         <br />
-        conversation.
+        {t("coins.lead2")}
       </p>
       <CoinPackGrid />
     </div>
@@ -404,8 +405,8 @@ function UnlockCard() {
         </span>
       </div>
       <div className="unlock-copy">
-        <h2 id="unlock-title">VIP Required</h2>
-        <p>Go VIP for unlimited videos, Message, and more.</p>
+        <h2 id="unlock-title">{t("overlay.vipRequired")}</h2>
+        <p>{t("overlay.vipCopy")}</p>
       </div>
       <div className="unlock-actions">
         <button
@@ -416,13 +417,13 @@ function UnlockCard() {
             navigate("/vip");
           }}
         >
-          Become VIP
+          {t("chat.become")}
         </button>
         <button className="overlay-later press" type="button" onClick={close}>
-          Maybe later
+          {t("overlay.later")}
         </button>
       </div>
-      <p className="unlock-price">Only $25.99</p>
+      <p className="unlock-price">{t("overlay.only")}</p>
     </div>
   );
 }
@@ -439,7 +440,7 @@ function EndCallCard() {
   return (
     <div className="overlay-card is-endcall" role="dialog" aria-labelledby="endcall-title">
       <OverlayClose variant="endcall" />
-      <h2 id="endcall-title">How About This Call?</h2>
+      <h2 id="endcall-title">{t("overlay.endTitle")}</h2>
       <p className="endcall-name">{girl.name}</p>
       <div className="endcall-avatar">
         <img src={girl.avatar} alt="" />
@@ -447,12 +448,12 @@ function EndCallCard() {
       </div>
       <div className="endcall-stats">
         <div>
-          <span>Duration</span>
+          <span>{t("overlay.duration")}</span>
           <strong>{duration}</strong>
         </div>
         <i />
         <div>
-          <span>Coins spent</span>
+          <span>{t("overlay.spent")}</span>
           <strong className="is-cyan">{spent}</strong>
         </div>
       </div>
@@ -461,17 +462,17 @@ function EndCallCard() {
           <span className="icon-box" style={{ width: 28, height: 27 }}>
             <img className="icon" src={publicUrl("/icons/endcall-bad.svg")} alt="" />
           </span>
-          Bad
+          {t("overlay.bad")}
         </button>
         <button className={`endcall-vote press ${vote === "good" ? "is-on" : ""}`} type="button" onClick={() => setVote("good")}>
           <span className="icon-box" style={{ width: 28, height: 27 }}>
             <img className="icon" src={publicUrl("/icons/endcall-good.svg")} alt="" />
           </span>
-          Good
+          {t("overlay.good")}
         </button>
       </div>
       <button className="btn-primary press" type="button" onClick={close}>
-        Done
+        {t("common.done")}
       </button>
     </div>
   );
@@ -481,7 +482,7 @@ function OverlayClose({ variant }: { variant?: "checkin" | "rate" | "promo" | "e
   const close = useAppStore((s) => s.closeOverlay);
   const floating = variant === "rate" || variant === "promo" || variant === "endcall" || variant === "reward3" || variant === "welcome";
   return (
-    <button className={`overlay-x press ${floating ? "is-rate" : ""} ${variant === "promo" ? "is-promo" : ""} ${variant === "endcall" ? "is-endcall" : ""} ${variant === "reward3" ? "is-reward3" : ""} ${variant === "welcome" ? "is-welcome" : ""}`} type="button" aria-label="Close" onClick={close}>
+    <button className={`overlay-x press ${floating ? "is-rate" : ""} ${variant === "promo" ? "is-promo" : ""} ${variant === "endcall" ? "is-endcall" : ""} ${variant === "reward3" ? "is-reward3" : ""} ${variant === "welcome" ? "is-welcome" : ""}`} type="button" aria-label={t("common.close")} onClick={close}>
       <span className="icon-box" style={{ width: variant === "promo" ? 14 : 12, height: variant === "promo" ? 14 : 12 }}>
         <img className="icon" src={variant === "endcall" ? publicUrl("/icons/endcall-close.svg") : variant === "promo" ? publicUrl("/icons/promo-close.svg") : publicUrl("/icons/pop-close.svg")} alt="" />
       </span>
@@ -490,33 +491,34 @@ function OverlayClose({ variant }: { variant?: "checkin" | "rate" | "promo" | "e
 }
 
 const WELCOME_PRIVILEGES = [
-  { icon: publicUrl("/icons/welcome-call.svg"), w: 20, h: 16, title: "Free Daily Call", copy: "One 15s video call every day." },
-  { icon: publicUrl("/icons/welcome-chat.svg"), w: 20, h: 20, title: "Free Messaging", copy: "Start with 5 free messages." },
-  { icon: publicUrl("/icons/welcome-key.svg"), w: 22, h: 12, title: "Direct Access", copy: "Unlock private contact details." },
-  { icon: publicUrl("/icons/welcome-heart.svg"), w: 20, h: 18, title: "Real-World Dating", copy: "One chance to initiate an offline date." },
+  { id: "call", icon: publicUrl("/icons/welcome-call.svg"), w: 20, h: 16 },
+  { id: "msg", icon: publicUrl("/icons/welcome-chat.svg"), w: 20, h: 20 },
+  { id: "access", icon: publicUrl("/icons/welcome-key.svg"), w: 22, h: 12 },
+  { id: "date", icon: publicUrl("/icons/welcome-heart.svg"), w: 20, h: 18 },
 ] as const;
+
+function welcomeTitle(id: (typeof WELCOME_PRIVILEGES)[number]["id"]) {
+  if (id === "call") return t("welcome.call");
+  if (id === "msg") return t("welcome.msg");
+  if (id === "access") return t("welcome.access");
+  return t("welcome.dating");
+}
+
+function welcomeCopy(id: (typeof WELCOME_PRIVILEGES)[number]["id"], starterLeft: number, freeCallUsed: boolean) {
+  if (id === "call") return freeCallUsed ? t("welcome.callUsed") : t("welcome.callCopy");
+  if (id === "msg") {
+    if (starterLeft > 1) return t("welcome.msgMany", { n: starterLeft });
+    if (starterLeft === 1) return t("welcome.msgOne");
+    return t("welcome.msgNone");
+  }
+  if (id === "access") return t("welcome.accessCopy");
+  return t("welcome.datingCopy");
+}
 
 function WelcomeCard() {
   const claimWelcome = useAppStore((s) => s.claimWelcome);
   const starterLeft = useAppStore((s) => s.deviceNewbie.starterLeft);
   const freeCallUsed = useAppStore((s) => s.deviceNewbie.lastFreeCallDate) === todayKey();
-  const privileges = WELCOME_PRIVILEGES.map((item) => {
-    if (item.title === "Free Messaging") {
-      return {
-        ...item,
-        copy:
-          starterLeft > 1
-            ? `Start with ${starterLeft} free messages.`
-            : starterLeft === 1
-              ? "Start with 1 free message."
-              : "Free messages already used.",
-      };
-    }
-    if (item.title === "Free Daily Call" && freeCallUsed) {
-      return { ...item, copy: "Today’s free call is already used." };
-    }
-    return item;
-  });
 
   return (
     <div className="overlay-card is-welcome" role="dialog" aria-labelledby="welcome-title">
@@ -526,30 +528,30 @@ function WelcomeCard() {
           <img className="icon" src={publicUrl("/icons/welcome-popper.svg")} alt="" />
         </span>
       </div>
-      <h2 id="welcome-title">Welcome to LiveGirl</h2>
+      <h2 id="welcome-title">{t("welcome.title")}</h2>
       <p>
-        Experience the world's most vibrant 1v1
+        {t("welcome.sub1")}
         <br />
-        video community.
+        {t("welcome.sub2")}
       </p>
-      <p className="welcome-kicker">YOUR NEWBIE PRIVILEGES</p>
+      <p className="welcome-kicker">{t("welcome.kicker")}</p>
       <ul className="welcome-list">
-        {privileges.map((item) => (
-          <li key={item.title}>
+        {WELCOME_PRIVILEGES.map((item) => (
+          <li key={item.id}>
             <span className="welcome-ico">
               <span className="icon-box" style={{ width: item.w, height: item.h }}>
                 <img className="icon" src={item.icon} alt="" />
               </span>
             </span>
             <span>
-              <strong>{item.title}</strong>
-              <small>{item.copy}</small>
+              <strong>{welcomeTitle(item.id)}</strong>
+              <small>{welcomeCopy(item.id, starterLeft, freeCallUsed)}</small>
             </span>
           </li>
         ))}
       </ul>
       <button className="btn-primary press" type="button" onClick={claimWelcome}>
-        Claim My Privileges
+        {t("welcome.claim")}
         <span className="icon-box" style={{ width: 12, height: 12 }}>
           <img className="icon" src={publicUrl("/icons/arrow.svg")} alt="" />
         </span>
@@ -588,14 +590,14 @@ function Reward3Card() {
           <img className="reward3-ring" src={publicUrl("/reward3/neon-ring.svg")} alt="" />
           <p className="reward3-kicker">
             <span />
-            LIMITED BONUS
+            {t("reward.kicker")}
             <span />
           </p>
           <p className="reward3-num">
             <span>0</span>
           </p>
           <p className="reward3-unit">
-            <span>Coin/min</span>
+            <span>{t("reward.unit")}</span>
           </p>
           <span className="reward3-sparks" aria-hidden>
             <i />
@@ -610,19 +612,19 @@ function Reward3Card() {
             <img src={publicUrl("/reward3/art.png")} alt="" />
           </div>
           <h2 id="reward3-title" className="reward3-line is-calls">
-            Free Video Calls
+            {t("reward.calls")}
           </h2>
           <p className="reward3-line is-days">
-            for <em>3 Days</em>
+            {t("reward.for")} <em>{t("reward.days")}</em>
           </p>
           <span className="reward3-underline" aria-hidden />
           <p className="reward3-price">
             <s>$29.99</s>
             <span aria-hidden>|</span>
-            <strong>Just $19.99</strong>
+            <strong>{t("reward.just")}</strong>
           </p>
           <button className="reward3-cta press" type="button" onClick={onBuy}>
-            GET IT NOW →
+            {t("reward.cta")}
           </button>
           <OverlayClose variant="reward3" />
         </div>
@@ -660,27 +662,27 @@ function PromoCard() {
       <div className="promo-body">
         <div className="promo-live">
           <span className="dot" />
-          LIVE NOW
+          {t("promo.live")}
         </div>
-        <h2 id="promo-title">New User Offer</h2>
-        <p>She’s waiting for you!</p>
+        <h2 id="promo-title">{t("promo.title")}</h2>
+        <p>{t("promo.wait")}</p>
         <div className="promo-pack">
           <div className="promo-coins">
             <span className="icon-box" style={{ width: 16, height: 14 }}>
               <img className="icon" src={publicUrl("/icons/promo-coin.svg")} alt="" />
             </span>
-            150 Coins
+            {t("promo.coins")}
           </div>
           <div className="promo-price">
             <s>$2.99</s>
             <div>
-              <span>NOW ONLY</span>
+              <span>{t("promo.now")}</span>
               <strong>$1.99</strong>
             </div>
           </div>
         </div>
         <button className="btn-primary press" type="button" onClick={onBuy}>
-          Call Now!
+          {t("promo.cta")}
           <span className="icon-box" style={{ width: 20, height: 16 }}>
             <img className="icon" src={publicUrl("/icons/promo-call.svg")} alt="" />
           </span>
@@ -702,11 +704,11 @@ function TaskCard() {
       <div className="checkin-glow" />
       <header className="checkin-head">
         <div>
-          <h2 id="checkin-title">7-Day Check-in</h2>
+          <h2 id="checkin-title">{t("task.title")}</h2>
           <p>
-            Claim your rewards daily to unlock
+            {t("task.sub1")}
             <br />
-            the mystery box.
+            {t("task.sub2")}
           </p>
         </div>
         <OverlayClose variant="checkin" />
@@ -716,7 +718,7 @@ function TaskCard() {
           const isToday = n === day;
           return (
             <div key={n} className={`checkin-cell ${isToday ? "is-today" : ""}`}>
-              <span>{isToday && !claimedToday ? "Today" : `Day ${n}`}</span>
+              <span>{isToday && !claimedToday ? t("task.today") : t("task.day", { n })}</span>
               {isToday ? (
                 <span className="icon-box checkin-coin" style={{ width: 27, height: 27 }}>
                   <img className="icon" src={publicUrl("/icons/checkin-coin.svg")} alt="" />
@@ -737,8 +739,8 @@ function TaskCard() {
             </span>
           </span>
           <div>
-            <span>Day 7 Bonus</span>
-            <strong>Mystery Box</strong>
+            <span>{t("task.day7")}</span>
+            <strong>{t("task.mystery")}</strong>
           </div>
           <em>
             <span className="icon-box" style={{ width: 20, height: 17 }}>
@@ -756,7 +758,7 @@ function TaskCard() {
           else claimDaily();
         }}
       >
-        {claimedToday ? "Come back tomorrow" : day === 7 ? `Claim ${CHECKIN_BONUS} Coins` : `Claim ${reward} Coins`}
+        {claimedToday ? t("task.tomorrow") : t("task.claim", { n: day === 7 ? CHECKIN_BONUS : reward })}
       </button>
     </div>
   );
@@ -784,22 +786,24 @@ function RateCard() {
           <span>+{RATE_REWARD}</span>
         </div>
       </div>
-      <h2 id="rate-title">Enjoying our app?</h2>
+      <h2 id="rate-title">{t("rate.title")}</h2>
       <p className="rate-copy">
         {ratedUs ? (
-          `Thanks — +${RATE_REWARD} coins already added.`
-        ) : (
+          t("rate.thanks", { n: RATE_REWARD })
+        ) : locale() === "en" ? (
           <>
             Give us a <em>5-star</em> in the App
             <br />
             Store to get <strong>100 Coins</strong>.
           </>
+        ) : (
+          t("rate.body")
         )}
       </p>
       <div className="rate-actions">
         {ratedUs ? (
           <button className="btn-primary press" type="button" onClick={close}>
-            Close
+            {t("common.close")}
           </button>
         ) : (
           <>
@@ -810,10 +814,10 @@ function RateCard() {
                 window.setTimeout(() => useAppStore.getState().claimRate(), 400);
               }}
             >
-              Rate Now
+              {t("me.rateNow")}
             </a>
             <button className="overlay-later press" type="button" onClick={close}>
-              Maybe Later
+              {t("rate.later")}
             </button>
           </>
         )}

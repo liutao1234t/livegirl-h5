@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { TabShell } from "../shells/Shells";
 import { RATE_REWARD, useAppStore } from "../store/appStore";
 import { publicUrl } from "../lib/publicUrl";
+import { formatCount, t } from "../i18n";
 
 export function MePage() {
   const navigate = useNavigate();
@@ -20,9 +21,9 @@ export function MePage() {
       header={
         <header className="home-header">
           <h1 className="logo" style={{ fontStyle: "normal" }}>
-            Me
+            {t("tab.me")}
           </h1>
-          <button className="press" type="button" aria-label="Settings" onClick={() => navigate("/settings")}>
+          <button className="press" type="button" aria-label={t("me.settings")} onClick={() => navigate("/settings")}>
             <span className="icon-box" style={{ width: 20, height: 20 }}>
               <img className="icon" src={publicUrl("/icons/settings.svg")} alt="" />
             </span>
@@ -32,17 +33,17 @@ export function MePage() {
     >
       <section className="me-card">
         <img className="me-avatar" src={publicUrl("/images/me-avatar.png")} alt="" />
-        <h2>{nickname}</h2>
+        <h2>{nickname === "User" ? t("me.user") : nickname}</h2>
         <p>ID: {userId ?? "—"}</p>
         <div className="me-wallet">
           <span>
             <span className="icon-box" style={{ width: 17, height: 15 }}>
               <img className="icon" src={publicUrl("/images/coin.png")} alt="" />
             </span>
-            {coins.toLocaleString()}
+            {formatCount(coins)}
           </span>
           <button className="buy-coins press" type="button" onClick={() => navigate("/coins")}>
-            Buy Coins
+            {t("me.buyCoins")}
           </button>
         </div>
       </section>
@@ -50,33 +51,33 @@ export function MePage() {
       <div className="me-stats">
         <div>
           <strong>{following}</strong>
-          <span>Following</span>
+          <span>{t("me.following")}</span>
         </div>
         <div>
           <strong>{favorites}</strong>
-          <span>Favorites</span>
+          <span>{t("me.favorites")}</span>
         </div>
       </div>
 
-      <section className={`me-spotlight ${isVip ? "is-on" : ""}`} aria-label="VIP Center">
+      <section className={`me-spotlight ${isVip ? "is-on" : ""}`} aria-label={t("me.vipCenter")}>
         <div className="me-spotlight-head">
           <h3>
             <span className="icon-box" style={{ width: 16.0417, height: 14.25 }}>
               <img className="icon" src={publicUrl("/icons/vip-diamond.svg")} alt="" />
             </span>
-            VIP Center
+            {t("me.vipCenter")}
           </h3>
-          <span className="me-spotlight-badge">{isVip ? "Active" : "Premium"}</span>
+          <span className="me-spotlight-badge">{isVip ? t("me.active") : t("me.premium")}</span>
         </div>
-        <p>{isVip ? "Your premium privileges are unlocked" : "Unlock exclusive benefits and privileges"}</p>
+        <p>{isVip ? t("me.vipOn") : t("me.vipOff")}</p>
         <button className={`me-spotlight-cta press ${isVip ? "is-quiet" : ""}`} type="button" onClick={() => navigate("/vip")}>
-          {isVip ? "View Benefits" : "Explore VIP"}
+          {isVip ? t("me.viewBenefits") : t("me.explore")}
         </button>
       </section>
 
-      <section className={`me-rate ${ratedUs ? "is-done" : ""}`} aria-label="Rate Us">
+      <section className={`me-rate ${ratedUs ? "is-done" : ""}`} aria-label={t("me.rateAria")}>
         <div className="me-rate-head">
-          <h3>{ratedUs ? "Thanks for Rating" : "Enjoying the App?"}</h3>
+          <h3>{ratedUs ? t("me.thanksRating") : t("me.enjoying")}</h3>
           <span className="me-rate-stars" aria-hidden>
             {Array.from({ length: 5 }, (_, i) => (
               <span key={i} className="icon-box" style={{ width: 15, height: 14.25 }}>
@@ -87,15 +88,15 @@ export function MePage() {
         </div>
         <div className="me-rate-body">
           <p>
-            Your feedback means a lot to us
-            <small>{ratedUs ? `${RATE_REWARD} Coins added` : `+${RATE_REWARD} Coins reward`}</small>
+            {t("me.feedback")}
+            <small>{ratedUs ? t("me.coinsAdded", { n: RATE_REWARD }) : t("me.coinsReward", { n: RATE_REWARD })}</small>
           </p>
           <button
             className={`me-rate-cta press ${ratedUs ? "is-quiet" : ""}`}
             type="button"
             onClick={() => openOverlay("rateUs")}
           >
-            {ratedUs ? "Rated" : "Rate Now"}
+            {ratedUs ? t("me.rated") : t("me.rateNow")}
           </button>
         </div>
       </section>
@@ -107,7 +108,7 @@ export function MePage() {
               <img className="icon" src={publicUrl("/icons/task.svg")} alt="" />
             </span>
           </span>
-          <span>Daily Task</span>
+          <span>{t("me.dailyTask")}</span>
           {dailyTaskDot ? <span className="unread-dot inline" /> : null}
           <span className="icon-box chevron" style={{ width: 8, height: 12 }}>
             <img className="icon" src={publicUrl("/icons/chevron.svg")} alt="" />
@@ -119,7 +120,7 @@ export function MePage() {
               <img className="icon" src={publicUrl("/icons/support.svg")} alt="" />
             </span>
           </span>
-          <span>Online Support</span>
+          <span>{t("me.support")}</span>
           <span className="icon-box chevron" style={{ width: 8, height: 12 }}>
             <img className="icon" src={publicUrl("/icons/chevron.svg")} alt="" />
           </span>
@@ -130,7 +131,7 @@ export function MePage() {
               <img className="icon" src={publicUrl("/icons/apple.svg")} alt="" />
             </span>
           </span>
-          <span>Apple Support</span>
+          <span>{t("me.apple")}</span>
           <span className="icon-box chevron" style={{ width: 8, height: 12 }}>
             <img className="icon" src={publicUrl("/icons/chevron.svg")} alt="" />
           </span>

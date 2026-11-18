@@ -7,6 +7,7 @@ import { StackShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { noteProfileView } from "../store/incomingCallStore";
 import { publicUrl } from "../lib/publicUrl";
+import { formatLastActive, t } from "../i18n";
 
 export function ProfilePage() {
   const { id = "isabella" } = useParams();
@@ -54,12 +55,12 @@ export function ProfilePage() {
         <div className="shade-top" />
         <div className="shade" />
         <div className="profile-nav">
-          <button className="circle-btn press" type="button" aria-label="Back" onClick={() => navigate(-1)}>
+          <button className="circle-btn press" type="button" aria-label={t("common.back")} onClick={() => navigate(-1)}>
             <span className="icon-box" style={{ width: 16, height: 16 }}>
               <img className="icon" src={publicUrl("/icons/back.svg")} alt="" />
             </span>
           </button>
-          <button className="circle-btn press" type="button" aria-label="More" onClick={() => navigate(`/report/${girl.id}`)}>
+          <button className="circle-btn press" type="button" aria-label={t("common.more")} onClick={() => navigate(`/report/${girl.id}`)}>
             <span className="icon-box" style={{ width: 4, height: 16 }}>
               <img className="icon" src={publicUrl("/icons/more.svg")} alt="" />
             </span>
@@ -82,10 +83,10 @@ export function ProfilePage() {
               {girl.online ? (
                 <div className="status-pill" style={{ position: "relative", top: 0, right: 0, display: "inline-flex" }}>
                   <span className="dot" style={{ background: "var(--online-cyan)" }} />
-                  Online
+                  {t("common.online")}
                 </div>
               ) : null}
-              <p style={{ margin: "8px 0 0", color: "#3fe5ff", fontSize: 12 }}>{girl.lastActive}</p>
+              <p style={{ margin: "8px 0 0", color: "#3fe5ff", fontSize: 12 }}>{formatLastActive(girl.lastActive)}</p>
             </div>
           </div>
         </div>
@@ -97,7 +98,7 @@ export function ProfilePage() {
             <span className="icon-box" style={{ width: 20, height: 16 }}>
               <img className="icon" src={publicUrl("/icons/video-chat.svg")} alt="" />
             </span>
-            Video Call
+            {t("profile.call")}
           </span>
           <small>
             <span className="icon-box" style={{ width: 15, height: 13 }}>
@@ -106,7 +107,7 @@ export function ProfilePage() {
             {formatCallRate(callRate)}
           </small>
         </button>
-        <button className="side-btn press" type="button" aria-label="Message" onClick={() => navigate(`/chat/${girl.id}`)}>
+        <button className="side-btn press" type="button" aria-label={t("profile.message")} onClick={() => navigate(`/chat/${girl.id}`)}>
           <span className="icon-box" style={{ width: 20, height: 20 }}>
             <img className="icon" src={publicUrl("/icons/heart.svg")} alt="" />
           </span>
@@ -114,7 +115,7 @@ export function ProfilePage() {
         <button
           className={`side-btn press ${followed ? "is-followed" : ""}`}
           type="button"
-          aria-label={followed ? "Following" : "Follow"}
+          aria-label={followed ? t("me.following") : t("profile.follow")}
           aria-pressed={followed}
           onClick={() => toggleFollow(girl.id)}
         >
@@ -125,12 +126,12 @@ export function ProfilePage() {
       </div>
 
       <section className="panel">
-        <h3>ABOUT ME</h3>
+        <h3>{t("profile.about")}</h3>
         <p>{girl.bio}</p>
       </section>
 
       <h3 className="section-title" style={{ fontSize: 12, letterSpacing: "0.6px", color: "var(--accent)", fontWeight: 600 }}>
-        INTERESTS
+        {t("profile.interests")}
       </h3>
       <div className="tags">
         {girl.interests.map((tag) => (
@@ -141,13 +142,13 @@ export function ProfilePage() {
       </div>
 
       <section className="panel">
-        <h3 style={{ fontSize: 14 }}>Profile Verification</h3>
+        <h3 style={{ fontSize: 14 }}>{t("profile.verify")}</h3>
         <div className="verify-grid">
           {[
             ["Facebook", publicUrl("/icons/verify-fb.svg"), "#2563eb"],
             ["Twitter", publicUrl("/icons/verify-x.svg"), "#60a5fa"],
-            ["Phone", publicUrl("/icons/verify-phone.svg"), "#9333ea"],
-            ["Photo", publicUrl("/icons/verify-photo.svg"), "#ec4899"],
+            [t("profile.phone"), publicUrl("/icons/verify-phone.svg"), "#9333ea"],
+            [t("profile.photo"), publicUrl("/icons/verify-photo.svg"), "#ec4899"],
           ].map(([label, src, bg]) => (
             <div key={label} className="verify-item">
               <span className="badge" style={{ background: bg }}>
@@ -159,14 +160,14 @@ export function ProfilePage() {
         </div>
       </section>
 
-      <h2 className="section-title">Moments</h2>
+      <h2 className="section-title">{t("profile.moments")}</h2>
       <div className="moments">
         {girl.moments.map((src, i) => (
           <button
             key={`${src}-${i}`}
             className="moment-tile press"
             type="button"
-            aria-label="View photo"
+            aria-label={t("profile.viewPhoto")}
             onClick={() => setPreview(src)}
           >
             <img src={src} alt="" />
@@ -178,7 +179,7 @@ export function ProfilePage() {
             <button
               type="button"
               className={`moment-viewer ${phase === "out" ? "is-out" : "is-in"}`}
-              aria-label="Close photo"
+              aria-label={t("profile.closePhoto")}
               onClick={() => (phase === "out" ? undefined : setPreview(null))}
               onAnimationEnd={onViewerEnd}
             >

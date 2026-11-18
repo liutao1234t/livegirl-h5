@@ -4,6 +4,7 @@ import { liveHubIap } from "../data/iap";
 import { rememberLiveHubReturn } from "../lib/liveHubReturn";
 import { publicUrl } from "../lib/publicUrl";
 import { useAppStore } from "../store/appStore";
+import { formatCount, t, type MessageKey } from "../i18n";
 
 import { useLocation, useMatch, useNavigate, useParams } from "react-router-dom";
 import { StackShell } from "../shells/Shells";
@@ -11,11 +12,11 @@ import { StackBar } from "../shells/StackBar";
 const BROWSE_MS = 30_000;
 const FAB = 70;
 
-const perks = [
-  { icon: "/icons/livehub-unlock-infinity.svg", w: 50.2414, h: 31.7674, lines: ["Unlimited", "Viewing"] },
-  { icon: "/icons/livehub-unlock-rooms.svg", w: 42.3682, h: 41.6542, lines: ["More", "Live Rooms"] },
-  { icon: "/icons/livehub-unlock-vip.svg", w: 45.629, h: 39.5209, lines: ["VIP", "Content"] },
-] as const;
+const perks: { icon: string; w: number; h: number; lines: readonly [MessageKey | "VIP", MessageKey] }[] = [
+  { icon: "/icons/livehub-unlock-infinity.svg", w: 50.2414, h: 31.7674, lines: ["hub.unlimited", "hub.viewing"] },
+  { icon: "/icons/livehub-unlock-rooms.svg", w: 42.3682, h: 41.6542, lines: ["hub.more", "hub.rooms"] },
+  { icon: "/icons/livehub-unlock-vip.svg", w: 45.629, h: 39.5209, lines: ["VIP", "hub.content"] },
+];
 
 export function LiveHubFab() {
   const navigate = useNavigate();
@@ -77,7 +78,7 @@ export function LiveHubFab() {
       type="button"
       className={`livehub-fab${dragging ? " is-drag" : " press"}`}
       style={spot ? { left: spot.left, top: spot.top, right: "auto", bottom: "auto" } : undefined}
-      aria-label="Live Hub"
+      aria-label={`${t("common.live")} Hub`}
       onClick={(event) => {
         if (event.detail && drag.current.moved) return;
         generation++;
@@ -108,11 +109,11 @@ interface Room {
 type HubTab = "all" | "new" | "hotie" | "sexy";
 type CardKind = "banner" | "tall" | "stack" | "wide" | "half";
 
-const tabs: { id: HubTab; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "new", label: "New" },
-  { id: "hotie", label: "Hotie" },
-  { id: "sexy", label: "Sexy" },
+const tabs: { id: HubTab; label: MessageKey }[] = [
+  { id: "all", label: "hub.all" },
+  { id: "new", label: "home.new" },
+  { id: "hotie", label: "hub.hotie" },
+  { id: "sexy", label: "hub.sexy" },
 ];
 
 const regions = new Intl.DisplayNames(["en"], { type: "region" });
@@ -233,7 +234,7 @@ function RoomPlayer({ room, src }: { room: Room; src: string }) {
         onLoad={onPlayerLoad} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />
       {!loaded && <div className="hub-cover" role="status">
         <img src={room.image_url_360x270} alt="" />
-        <div>Loading live room…<progress aria-label="Loading live room" /></div>
+        <div>{t("hub.loadingRoom")}<progress aria-label={t("hub.loadingRoomAria")} /></div>
       </div>}
     </div>
   );
@@ -264,17 +265,17 @@ function RoomFace({ room, kind, onOpen }: { room: Room; kind: CardKind; onOpen: 
       {combined ? (
         <span className="hub-pill">
           <i className="hub-dot" />
-          Live
+          {t("common.live")}
           <span className="hub-pill-bar">|</span>
           <img src={publicUrl(viewersIcon[kind])} alt="" />
-          {room.num_users.toLocaleString()}
+          {formatCount(room.num_users)}
         </span>
       ) : (
         <>
-          <span className="hub-pill"><i className="hub-dot" />Live</span>
+          <span className="hub-pill"><i className="hub-dot" />{t("common.live")}</span>
           <span className="hub-count">
             <img src={publicUrl(viewersIcon[kind])} alt="" />
-            {room.num_users.toLocaleString()}
+            {formatCount(room.num_users)}
           </span>
         </>
       )}
@@ -318,7 +319,7 @@ function Banner({ rooms, onOpen }: { rooms: Room[]; onOpen: (room: Room) => void
   };
 
   return (
-    <section className="hub-banner" aria-label="Featured rooms">
+    <section className="hub-banner" aria-label={t("hub.featured")}>
       <div className="hub-banner-track" ref={scroller} onScroll={onScroll}>
         {rooms.map((room) => (
           <RoomFace key={room.username} room={room} kind="banner" onOpen={onOpen} />
@@ -331,7 +332,7 @@ function Banner({ rooms, onOpen }: { rooms: Room[]; onOpen: (room: Room) => void
               key={room.username}
               type="button"
               className={dot === index ? "is-on" : ""}
-              aria-label={`Show room ${dot + 1}`}
+              aria-label={t("hub.showRoom", { n: dot + 1 })}
               aria-current={dot === index ? "true" : undefined}
               onClick={() => scroller.current?.scrollTo({ left: dot * scroller.current.clientWidth, behavior: "smooth" })}
             />
@@ -490,7 +491,7 @@ export function LiveHubPage() {
 
   return <StackShell onRefresh={username ? undefined : () => loadPage(0, true)} header={username ? <StackBar title={username} /> : (
     <header className="hub-bar">
-      <button className="circle-btn press" type="button" aria-label="Back" onClick={() => {
+      <button className="circle-btn press" type="button" aria-label={t("common.back")} onClick={() => {
         generation++;
         useRooms.setState(initialFeed);
         rememberLiveHubReturn();
@@ -499,21 +500,21 @@ export function LiveHubPage() {
         <img src={publicUrl("/icons/livehub-back.svg")} alt="" width={16} height={16} />
       </button>
       <h1 className="hub-bar-title">
-        <span>Live </span>
+        <span>{t("common.live")} </span>
         <span className="hub-bar-hub">Hub</span>
         <img src={publicUrl("/icons/livehub-live.svg")} alt="" width={24} height={24} />
       </h1>
-      <button className="hub-crown press" type="button" aria-label="Unlock Live Hub VIP" onClick={() => useAppStore.getState().openOverlay("livehub")}>
+      <button className="hub-crown press" type="button" aria-label={t("hub.unlockAria")} onClick={() => useAppStore.getState().openOverlay("livehub")}>
         <img src={publicUrl("/icons/livehub-crown.svg")} alt="" width={20} height={20} />
       </button>
     </header>
   )}>
     <div className={username ? "hub-room-view" : "hub-list"} data-category={username ? undefined : tab} ref={content}>
       {username && room && src && (unlocked || expiredRoom !== username) && <RoomPlayer key={src} room={room} src={src} />}
-      {username && !src && (offset > 0 || !hasMore) && <p>This room is unavailable.</p>}
+      {username && !src && (offset > 0 || !hasMore) && <p>{t("hub.unavailable")}</p>}
       {!username && featured.length > 0 && <Banner rooms={featured} onOpen={openRoom} />}
       {!username && rooms.length > 0 && (
-        <div className="hub-tabs" role="tablist" aria-label="Live categories">
+        <div className="hub-tabs" role="tablist" aria-label={t("hub.categories")}>
           {tabs.map((item) => (
             <button
               key={item.id}
@@ -523,7 +524,7 @@ export function LiveHubPage() {
               aria-selected={tab === item.id}
               onClick={() => setTab(item.id)}
             >
-              {item.label}
+              {t(item.label)}
             </button>
           ))}
         </div>
@@ -532,11 +533,11 @@ export function LiveHubPage() {
         <RoomRows key={tab + "/" + page[0].username} rooms={page} onOpen={openRoom} />
       )}
       {!username && rooms.length > 0 && visiblePages.length === 0 && status !== "loading" && (
-        <p className="hub-note">No rooms in this category right now.</p>
+        <p className="hub-note">{t("hub.noneCat")}</p>
       )}
-      {(!username || !offset) && status === "loading" && <p className="hub-note" role="status">Loading live rooms…</p>}
-      {(!username || !offset) && status === "failed" && <p className="hub-note" role="alert">Couldn’t load rooms. <button type="button" onClick={() => loadPage(requestedOffset)}>Try again</button></p>}
-      {!username && !hasMore && <p className="hub-note">{rooms.length ? "You’ve reached the end." : "No public rooms are live right now."}</p>}
+      {(!username || !offset) && status === "loading" && <p className="hub-note" role="status">{t("hub.loading")}</p>}
+      {(!username || !offset) && status === "failed" && <p className="hub-note" role="alert">{t("hub.fail")} <button type="button" onClick={() => loadPage(requestedOffset)}>{t("common.tryAgain")}</button></p>}
+      {!username && !hasMore && <p className="hub-note">{rooms.length ? t("hub.end") : t("hub.empty")}</p>}
     </div>
   </StackShell>;
 }
@@ -569,8 +570,8 @@ export function LiveHubUnlock() {
       <div className="livehub-card">
         <div className="livehub-brand">
           <img src={publicUrl("/icons/livehub-unlock-crown.svg")} alt="" width={29.2044} height={23.7589} />
-          <span>LIVE HUB</span>
-          <button type="button" className="livehub-x press" aria-label="Close" onClick={dismiss}>
+          <span>{t("hub.liveBadge")} HUB</span>
+          <button type="button" className="livehub-x press" aria-label={t("common.close")} onClick={dismiss}>
             <img src={publicUrl("/icons/livehub-unlock-close.svg")} alt="" width={11.6667} height={11.6667} />
           </button>
         </div>
@@ -578,7 +579,7 @@ export function LiveHubUnlock() {
           <img className="livehub-art" src={publicUrl("/images/livehub-unlock-hero.png")} alt="" />
           <span className="livehub-live">
             <img src={publicUrl("/icons/livehub-unlock-live-dot.svg")} alt="" width={8.98596} height={8.4476} />
-            LIVE
+            {t("hub.liveBadge")}
           </span>
           <span className="livehub-watch">
             <img src={publicUrl("/icons/livehub-unlock-eye.svg")} alt="" width={15.1638} height={10.0315} />
@@ -586,15 +587,15 @@ export function LiveHubUnlock() {
           </span>
         </div>
         <h2 id="livehub-title">
-          Unlock
+          {t("hub.unlock")}
           <em>
-            Club
+            {t("hub.club")}
             <img className="livehub-doodle" src={publicUrl("/icons/livehub-unlock-crown-doodle.svg")} alt="" width={27.5195} height={24.8148} />
           </em>
         </h2>
         <p className="livehub-keep">
           <i />
-          Keep Watching Live
+          {t("hub.keep")}
           <i />
         </p>
         <ul className="livehub-perks">
@@ -604,20 +605,20 @@ export function LiveHubUnlock() {
                 <img src={publicUrl(item.icon)} alt="" width={item.w} height={item.h} />
               </span>
               <span>
-                {item.lines[0]}
+                {item.lines[0] === "VIP" ? "VIP" : t(item.lines[0])}
                 <br />
-                {item.lines[1]}
+                {t(item.lines[1])}
               </span>
             </li>
           ))}
         </ul>
         <div className="livehub-offer">
-          <span className="livehub-save">Save 60%</span>
+          <span className="livehub-save">{t("hub.save")}</span>
           <p className="livehub-price">
             $19.99 <s>$49.99</s>
           </p>
           <button type="button" className="livehub-cta press" disabled={payBusy} onClick={buy}>
-            JOIN CLUB
+            {t("hub.join")}
             <img src={publicUrl("/icons/livehub-unlock-arrow.svg")} alt="" width={15.1638} height={12.6714} />
           </button>
         </div>

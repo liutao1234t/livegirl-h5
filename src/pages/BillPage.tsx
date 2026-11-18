@@ -3,6 +3,7 @@ import { StackBar } from "../shells/StackBar";
 import { StackShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { publicUrl } from "../lib/publicUrl";
+import { billTitle, formatCount, t } from "../i18n";
 
 export function BillPage() {
   const navigate = useNavigate();
@@ -10,12 +11,12 @@ export function BillPage() {
   const bills = useAppStore((s) => s.bills);
 
   return (
-    <StackShell header={<StackBar title="Bill" />}>
+    <StackShell header={<StackBar title={t("bill.title")} />}>
       <div className="stk-pad">
         <section className="bill-hero">
-          <p>Current balance</p>
+          <p>{t("bill.balance")}</p>
           <h2>
-            {coins.toLocaleString()}
+            {formatCount(coins)}
             <span className="icon-box" style={{ width: 25, height: 22 }}>
               <img className="icon" src={publicUrl("/images/coin.png")} alt="" />
             </span>
@@ -24,7 +25,7 @@ export function BillPage() {
             <span className="icon-box" style={{ width: 9, height: 9 }}>
               <img className="icon" src={publicUrl("/icons/bill-plus.svg")} alt="" />
             </span>
-            Get more
+            {t("bill.more")}
           </button>
         </section>
         {bills.map((row) => (
@@ -35,7 +36,7 @@ export function BillPage() {
               </span>
             </span>
             <span>
-              <strong>{row.title}</strong>
+              <strong>{billTitle(row.title)}</strong>
               <small>{row.at}</small>
             </span>
             <b className={row.kind === "in" ? "in" : ""}>

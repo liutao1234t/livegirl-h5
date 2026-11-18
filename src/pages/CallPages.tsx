@@ -11,7 +11,8 @@ import {
   retainCallClip,
 } from "../lib/callClip";
 import { isUsableVideoUrl, setMediaMuted } from "../lib/media";
-import { CALL_INSUFFICIENT_TOAST, canPlaceCall, formatCallRate, FREE_CALL_ENDS, FREE_CALL_SEC, openCoinShop, showCallPaywall, useCallRate } from "../lib/paywall";
+import { canPlaceCall, formatCallRate, FREE_CALL_SEC, openCoinShop, showCallPaywall, useCallRate } from "../lib/paywall";
+import { formatCount, t } from "../i18n";
 import { armCameraPreview, requestFrontCamera, stopFrontCamera } from "../lib/userCamera";
 import { HANGUP_EXIT_MS } from "../shells/navMotion";
 import { FullscreenShell } from "../shells/Shells";
@@ -111,10 +112,10 @@ export function OutgoingCallPage() {
             <span className="icon-box" style={{ width: 10, height: 12 }}>
               <img className="icon" src={publicUrl("/icons/lock.svg")} alt="" />
             </span>
-            End-to-End Encrypted
+            {t("call.encrypted")}
           </div>
           <h1>{girl.name}</h1>
-          <p className="status">Calling...</p>
+          <p className="status">{t("call.calling")}</p>
           <p className="rate">
             <span className="icon-box" style={{ width: 12, height: 11 }}>
               <img className="icon" src={publicUrl("/icons/call-rate.png")} alt="" />
@@ -125,13 +126,13 @@ export function OutgoingCallPage() {
             <div className="call-hang-stack">
               {unavailable ? (
                 <p className="call-unavailable" role="status">
-                  The other party is currently unavailable.
+                  {t("call.unavailable")}
                 </p>
               ) : null}
               <button
                 className="hang press"
                 type="button"
-                aria-label="Cancel"
+                aria-label={t("common.cancel")}
                 onClick={() => {
                   stopFrontCamera();
                   navigate(-1);
@@ -294,10 +295,10 @@ export function IncomingCallPage({ girlId }: { girlId?: string } = {}) {
             <span className="icon-box" style={{ width: 10, height: 12 }}>
               <img className="icon" src={publicUrl("/icons/lock.svg")} alt="" />
             </span>
-            End-to-End Encrypted
+            {t("call.encrypted")}
           </div>
           <h1>{girl.name}</h1>
-          <p className="status is-in">{accepted ? "Connecting..." : "Incoming Video Call..."}</p>
+          <p className="status is-in">{accepted ? t("call.connecting") : t("call.incoming")}</p>
           <p className="rate">
             <span className="icon-box" style={{ width: 12, height: 11 }}>
               <img className="icon" src={publicUrl("/icons/call-rate.png")} alt="" />
@@ -309,10 +310,10 @@ export function IncomingCallPage({ girlId }: { girlId?: string } = {}) {
               <div className="call-hang-stack">
                 {unavailable ? (
                   <p className="call-unavailable" role="status">
-                    The other party is currently unavailable.
+                    {t("call.unavailable")}
                   </p>
                 ) : null}
-                <button className="hang press" type="button" aria-label="Decline" onClick={leaveIncoming}>
+                <button className="hang press" type="button" aria-label={t("call.decline")} onClick={leaveIncoming}>
                   <span className="icon-box" style={{ width: 34, height: 13 }}>
                     <img className="icon" src={publicUrl("/icons/hangup.svg")} alt="" />
                   </span>
@@ -321,22 +322,22 @@ export function IncomingCallPage({ girlId }: { girlId?: string } = {}) {
             ) : (
               <>
                 <div className="lbl">
-                  <button className="hang press" type="button" aria-label="Decline" onClick={leaveIncoming}>
+                  <button className="hang press" type="button" aria-label={t("call.decline")} onClick={leaveIncoming}>
                     <span className="icon-box" style={{ width: 34, height: 13 }}>
                       <img className="icon" src={publicUrl("/icons/hangup.svg")} alt="" />
                     </span>
                   </button>
-                  Decline
+                  {t("call.decline")}
                 </div>
                 <div className="lbl accept-lbl">
                   <div className="accept-beat">
-                    <button className="accept press" type="button" aria-label="Accept" onClick={onAccept}>
+                    <button className="accept press" type="button" aria-label={t("call.accept")} onClick={onAccept}>
                       <span className="icon-box" style={{ width: 30, height: 24 }}>
                         <img className="icon" src={publicUrl("/icons/accept-video.svg")} alt="" />
                       </span>
                     </button>
                   </div>
-                  Accept
+                  {t("call.accept")}
                 </div>
               </>
             )}
@@ -386,12 +387,12 @@ export function InCallPage() {
     useAppStore.getState().closeOverlay();
     const leave = { replace: true as const, state: { hangupExit: true } };
     if (reason === "freeEnd") {
-      useAppStore.getState().showToast(FREE_CALL_ENDS);
+      useAppStore.getState().showToast(t("toast.freeEnds"));
       navigate(`/profile/${girl.id}`, leave);
       return;
     }
     if (reason === "insufficient") {
-      useAppStore.getState().showToast(CALL_INSUFFICIENT_TOAST);
+      useAppStore.getState().showToast(t("toast.noCoins"));
       navigate(`/profile/${girl.id}`, leave);
       return;
     }
@@ -414,7 +415,7 @@ export function InCallPage() {
       stopFrontCamera();
       ignoreNextProfileView(girl.id);
       useAppStore.getState().closeOverlay();
-      useAppStore.getState().showToast(CALL_INSUFFICIENT_TOAST);
+      useAppStore.getState().showToast(t("toast.noCoins"));
       navigate(`/profile/${girl.id}`, { replace: true, state: { hangupExit: true } });
       return;
     }
@@ -532,8 +533,8 @@ export function InCallPage() {
               <img className="icon" src={publicUrl("/icons/private.svg")} alt="" />
             </span>
             <span className="hud-private-copy">
-              <strong>Private Chat</strong>
-              <small>Protecting</small>
+              <strong>{t("call.private")}</strong>
+              <small>{t("call.protecting")}</small>
             </span>
           </div>
           <div className="hud-pill hud-timer">
@@ -543,32 +544,32 @@ export function InCallPage() {
           <button
             className="hud-pill hud-coins press"
             type="button"
-            aria-label="Get coins"
+            aria-label={t("coins.get")}
             onClick={() => openCoinShop(navigate)}
           >
             <img className="hud-coin" src={publicUrl("/images/coin.png")} alt="" />
-            {coins.toLocaleString()}
+            {formatCount(coins)}
           </button>
         </div>
         <div className={`pip ${cameraLive && cameraOn ? "is-live" : "is-off"}`}>
           <video ref={pipRef} className="pip-cam" playsInline muted autoPlay />
         </div>
         <div className="incall-bar">
-          <button className="glass-btn press" type="button" aria-label={muted ? "Unmute" : "Mute"} onClick={() => setMuted((v) => !v)}>
+          <button className="glass-btn press" type="button" aria-label={muted ? t("call.unmute") : t("call.mute")} onClick={() => setMuted((v) => !v)}>
             <img className="icon" src={muted ? publicUrl("/icons/mic-off.svg") : publicUrl("/icons/mic.svg")} alt="" />
           </button>
           <button
             className="glass-btn press"
             type="button"
-            aria-label={cameraOn ? "Turn camera off" : "Turn camera on"}
+            aria-label={cameraOn ? t("call.camOff") : t("call.camOn")}
             onClick={() => setCameraOn((v) => !v)}
           >
             <img className="icon" src={cameraOn ? publicUrl("/icons/camera.svg") : publicUrl("/icons/camera-off.svg")} alt="" />
           </button>
-          <button className="hang incall-hang press" type="button" aria-label="End call" onClick={() => hangUp("user")}>
+          <button className="hang incall-hang press" type="button" aria-label={t("call.end")} onClick={() => hangUp("user")}>
             <img className="icon" src={publicUrl("/icons/hangup-phone.svg")} alt="" />
           </button>
-          <button className="glass-btn press" type="button" aria-label="Gift" onClick={() => openOverlay("gift", id)}>
+          <button className="glass-btn press" type="button" aria-label={t("gift.aria")} onClick={() => openOverlay("gift", id)}>
             <img className="icon" src={publicUrl("/icons/gift.svg")} alt="" />
           </button>
         </div>

@@ -7,6 +7,7 @@ import { OfferGiftButton, TabShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { useHostsStore } from "../store/hostsStore";
 import { publicUrl } from "../lib/publicUrl";
+import { t } from "../i18n";
 
 function PodiumCard({
   girl,
@@ -58,21 +59,21 @@ export function RankingPage() {
       onRefresh={() => refreshHosts({ force: true })}
       header={
         <header className="home-header">
-          <h1 className="logo">Ranking</h1>
+          <h1 className="logo">{t("tab.ranking")}</h1>
           <OfferGiftButton />
         </header>
       }
     >
       <div className="rank-switch">
-        {(["Daily", "Weekly"] as const).map((t) => (
-          <button key={t} className={`press ${tab === t ? "is-on" : ""}`} type="button" onClick={() => setTab(t)}>
-            {t}
+        {(["Daily", "Weekly"] as const).map((item) => (
+          <button key={item} className={`press ${tab === item ? "is-on" : ""}`} type="button" onClick={() => setTab(item)}>
+            {item === "Daily" ? t("rank.daily") : t("rank.weekly")}
           </button>
         ))}
       </div>
 
       {ranks.length === 0 ? (
-        <p className="rank-empty">No ranking yet</p>
+        <p className="rank-empty">{t("rank.empty")}</p>
       ) : (
         <>
           <div className="podium">

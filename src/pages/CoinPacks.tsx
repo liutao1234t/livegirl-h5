@@ -2,6 +2,7 @@ import { coinsIap } from "../data/iap";
 import { coinPacks, type CoinPack } from "../data/shop";
 import { useAppStore } from "../store/appStore";
 import { publicUrl } from "../lib/publicUrl";
+import { t } from "../i18n";
 
 export function CoinPackGrid() {
   const payBusy = useAppStore((s) => s.payBusy);
@@ -48,15 +49,16 @@ function Pack({ pack, onBuy }: { pack: CoinPack; onBuy: () => void }) {
     .join(" ");
 
   return (
-    <button className={cls} type="button" aria-label={`${pack.coins} coins, ${pack.price}`} onClick={onBuy}>
-      {pack.badge ? <span className={`pack-badge tone-${pack.badgeTone ?? "wine"}`}>{pack.badge}</span> : null}
-      {pack.best ? <span className="pack-best">SAVE BEST</span> : null}
-      {pack.bonus ? <em>+{pack.bonus} Bonus</em> : null}
+    <button className={cls} type="button" aria-label={t("coins.packAria", { n: pack.coins, price: pack.price })} onClick={onBuy}>
+      {pack.id === "p5" ? <span className="pack-badge tone-wine">{t("coins.userTake", { n: 56 })}</span> : null}
+      {pack.id === "p8" ? <span className="pack-badge tone-mid">{t("coins.userTake", { n: 22 })}</span> : null}
+      {pack.best ? <span className="pack-best">{t("coins.best")}</span> : null}
+      {pack.bonus ? <em>{t("coins.bonus", { n: pack.bonus })}</em> : null}
       <span className="icon-box pack-gem" style={{ width: 30, height: 27 }}>
         <img className="icon" src={publicUrl("/images/coin.png")} alt="" />
       </span>
       <strong>{pack.coins}</strong>
-      <small>COINS</small>
+      <small>{t("coins.word")}</small>
       <span className="pack-price">{pack.price}</span>
     </button>
   );

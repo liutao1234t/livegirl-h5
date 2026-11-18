@@ -4,6 +4,7 @@ import { StackBar } from "../shells/StackBar";
 import { StackShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { publicUrl } from "../lib/publicUrl";
+import { t } from "../i18n";
 
 export function EditProfilePage() {
   const navigate = useNavigate();
@@ -22,10 +23,10 @@ export function EditProfilePage() {
     <StackShell
       header={
         <StackBar
-          title="Edit Profile"
+          title={t("edit.title")}
           right={
             <button className="stack-save press" type="button" onClick={() => onSave()}>
-              Save
+              {t("common.save")}
             </button>
           }
         />
@@ -39,11 +40,11 @@ export function EditProfilePage() {
               <img className="edit-cam-icon" src={publicUrl("/icons/camera.svg")} alt="" />
             </span>
           </span>
-          <span className="edit-change">Change Profile Photo</span>
+          <span className="edit-change">{t("edit.changePhoto")}</span>
         </button>
 
         <label className="edit-block">
-          Nickname
+          {t("edit.nickname")}
           <span className="edit-field">
             <input value={nick} onChange={(e) => setNick(e.target.value)} />
             <span className="icon-box" style={{ width: 23, height: 15 }}>
@@ -52,12 +53,12 @@ export function EditProfilePage() {
           </span>
         </label>
         <label className="edit-block">
-          About me
+          {t("edit.about")}
           <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} />
         </label>
         <div className="stk-card rounder edit-info">
           <button className="stk-row press" type="button">
-            Gender
+            {t("edit.gender")}
             <span className="stk-meta">
               {profile.gender}
               <span className="icon-box" style={{ width: 8, height: 12 }}>
@@ -66,7 +67,7 @@ export function EditProfilePage() {
             </span>
           </button>
           <button className="stk-row press" type="button">
-            Birthday
+            {t("edit.birthday")}
             <span className="stk-meta">
               {profile.birthday}
               <span className="icon-box" style={{ width: 8, height: 12 }}>

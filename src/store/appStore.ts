@@ -21,6 +21,7 @@ import {
   sealDeviceNewbie,
   type DeviceNewbie,
 } from "../lib/deviceNewbie";
+import { formatStamp } from "../i18n";
 import { cancelPendingIap, iapFailToast, iapSuccessToast, requestIap } from "../lib/nativeIap";
 import {
   askHostReply,
@@ -440,7 +441,7 @@ function isViewingChat(girlId: string) {
 }
 
 function stamp() {
-  return new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  return formatStamp();
 }
 
 function rememberGirl(girlId: string) {

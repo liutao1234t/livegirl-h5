@@ -8,9 +8,7 @@ import { useAppStore } from "../store/appStore";
 import { useHostsStore } from "../store/hostsStore";
 import { useSayHiStore } from "../store/sayHiStore";
 import { publicUrl } from "../lib/publicUrl";
-
-const officialPreview =
-  "Welcome to our global family, it's crazy and sexy here. Go and Find your love! wave your fingers and start video chat!";
+import { t } from "../i18n";
 
 export function MessagesPage() {
   const navigate = useNavigate();
@@ -45,7 +43,7 @@ export function MessagesPage() {
         const girl = getGirl(id);
         return {
           girl,
-          preview: last.kind === "gift" ? "Sent a gift" : last.text,
+          preview: last.kind === "gift" ? t("gift.sent") : last.text,
           time: last.at ? formatInboxTime(last.at) : "",
           at: last.at ?? 0,
           unread: (unread[id] ?? 0) > 0,
@@ -61,7 +59,7 @@ export function MessagesPage() {
     <TabShell
       header={
         <header className="home-header">
-          <h1 className="logo">Messages</h1>
+          <h1 className="logo">{t("tab.messages")}</h1>
           <OfferGiftButton />
         </header>
       }
@@ -70,10 +68,10 @@ export function MessagesPage() {
         <span className="icon-box" style={{ width: 18, height: 18 }}>
           <img className="icon" src={publicUrl("/icons/search.svg")} alt="" />
         </span>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search chats..." />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("messages.search")} />
       </label>
 
-      <p className="section-kicker">ONLINE NOW</p>
+      <p className="section-kicker">{t("messages.onlineNow")}</p>
       <div className="online-row">
         {onlineNow.map((p) => (
           <button key={p.id} className="online-item press" type="button" onClick={() => navigate(`/profile/${p.id}`)}>
@@ -94,10 +92,10 @@ export function MessagesPage() {
         </span>
         <span className="inbox-body">
           <span className="inbox-top">
-            <strong>Official</strong>
-            <time>Just now</time>
+            <strong>{t("messages.official")}</strong>
+            <time>{t("common.justNow")}</time>
           </span>
-          <span className="inbox-preview">{officialPreview}</span>
+          <span className="inbox-preview">{t("messages.preview")}</span>
         </span>
       </div>
 
@@ -107,7 +105,7 @@ export function MessagesPage() {
             <button
               className="inbox-avatar press"
               type="button"
-              aria-label={`${row.girl.name} profile`}
+              aria-label={t("messages.profile", { name: row.girl.name })}
               onClick={() => navigate(`/profile/${row.girl.id}`)}
             >
               <img src={row.girl.avatar} alt="" />

@@ -6,6 +6,7 @@ import { StackShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { useHostsStore } from "../store/hostsStore";
 import { publicUrl } from "../lib/publicUrl";
+import { formatLastActive, t } from "../i18n";
 
 export function ChatPage() {
   const { id = "isabella" } = useParams();
@@ -51,7 +52,7 @@ export function ChatPage() {
     <StackShell
       header={
         <header className="chat-header">
-          <button className="circle-btn press" type="button" aria-label="Back" onClick={() => navigate(-1)}>
+          <button className="circle-btn press" type="button" aria-label={t("common.back")} onClick={() => navigate(-1)}>
             <span className="icon-box" style={{ width: 16, height: 16 }}>
               <img className="icon" src={publicUrl("/icons/back.svg")} alt="" />
             </span>
@@ -67,10 +68,10 @@ export function ChatPage() {
             </span>
             <div>
               <h2>{girl.name}</h2>
-              <p>{girl.online ? "Online" : girl.lastActive}</p>
+              <p>{girl.online ? t("common.online") : formatLastActive(girl.lastActive)}</p>
             </div>
           </div>
-          <button className="circle-btn press" type="button" aria-label="More" onClick={() => navigate(`/report/${id}`)}>
+          <button className="circle-btn press" type="button" aria-label={t("common.more")} onClick={() => navigate(`/report/${id}`)}>
             <span className="icon-box" style={{ width: 4, height: 16 }}>
               <img className="icon" src={publicUrl("/icons/more.svg")} alt="" />
             </span>
@@ -83,21 +84,21 @@ export function ChatPage() {
             <span className="icon-box" style={{ width: 20, height: 16 }}>
               <img className="icon" src={publicUrl("/icons/video-chat.svg")} alt="" />
             </span>
-            Start Video Call
+            {t("chat.start")}
           </button>
           <form className="composer" onSubmit={onSend}>
-            <button className="composer-gift press" type="button" aria-label="Gift" onClick={() => openOverlay("gift", id)}>
+            <button className="composer-gift press" type="button" aria-label={t("gift.aria")} onClick={() => openOverlay("gift", id)}>
               <span className="icon-box" style={{ width: 40, height: 40 }}>
                 <img className="icon" src={publicUrl("/images/chat-gift.png")} alt="" />
               </span>
             </button>
-            <button className="round press" type="button" aria-label="More">
+            <button className="round press" type="button" aria-label={t("common.more")}>
               <span className="icon-box" style={{ width: 15, height: 15 }}>
                 <img className="icon" src={publicUrl("/icons/plus.svg")} alt="" />
               </span>
             </button>
-            <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Type a message..." />
-            <button className="send press" type="submit" aria-label="Send">
+            <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={t("chat.placeholder")} />
+            <button className="send press" type="submit" aria-label={t("common.send")}>
               <span className="icon-box" style={{ width: 19, height: 16 }}>
                 <img className="icon" src={publicUrl("/icons/send.svg")} alt="" />
               </span>
@@ -107,7 +108,7 @@ export function ChatPage() {
       }
     >
       <div className="messages" ref={scroller}>
-        {msgs.length > 0 ? <div className="date-chip">Today</div> : null}
+        {msgs.length > 0 ? <div className="date-chip">{t("common.today")}</div> : null}
         {msgs.map((m, i) => {
           if (m.kind === "gift" && m.image) {
             return (
@@ -130,12 +131,12 @@ export function ChatPage() {
                 {i === lastFailIndex && lastFailIndex === msgs.length - 1 && !isVip ? (
                   <div className="fail-vip">
                     <p className="fail-note">
-                      Message failed. Only VIP members can
+                      {t("chat.fail1")}
                       <br />
-                      send unlimited messages.
+                      {t("chat.fail2")}
                     </p>
                     <button className="vip-btn press" type="button" onClick={() => navigate("/vip")}>
-                      Become VIP
+                      {t("chat.become")}
                     </button>
                   </div>
                 ) : null}

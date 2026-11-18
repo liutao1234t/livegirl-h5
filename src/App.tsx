@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { useKeyboardInset } from "./hooks/useKeyboardInset";
+import { applyDocumentLocale, useActiveLocale } from "./i18n";
 import { NavStage } from "./shells/NavStage";
 import { OverlayHost } from "./shells/OverlayHost";
 import { useHostsStore } from "./store/hostsStore";
@@ -10,7 +11,11 @@ import { IncomingCallGate, startIncomingCallDispatch } from "./store/incomingCal
 import { startSayHiDispatch, useSayHiStore } from "./store/sayHiStore";
 
 export function App() {
+  const uiLocale = useActiveLocale();
   useKeyboardInset();
+  useEffect(() => {
+    applyDocumentLocale();
+  }, [uiLocale]);
   useEffect(() => {
     void useHostsStore.getState().refreshHosts().then(() => {
       useSayHiStore.getState().ensureOnlineNow();

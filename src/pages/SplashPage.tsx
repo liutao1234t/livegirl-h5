@@ -4,6 +4,7 @@ import { useAppStore } from "../store/appStore";
 import { FullscreenShell } from "../shells/Shells";
 import { clearLiveHubReturn, hasPendingLiveHubReturn } from "../lib/liveHubReturn";
 import { LANDING_POSTER, mountLandingVideo } from "../lib/landingMedia";
+import { t } from "../i18n";
 
 export function SplashPage() {
   const navigate = useNavigate();
@@ -50,19 +51,19 @@ export function SplashPage() {
         <div className="splash-body">
           <h1>
             <span className="splash-copy splash-copy-1">
-              Connect with the
+              {t("splash.line1")}
               <br />
-              World
+              {t("splash.line2")}
             </span>
           </h1>
           <p className="lead">
             <span className="splash-copy splash-copy-2">
-              Experience premium 1-on-1 video chats. Meet fascinating people in an exclusive, high-end digital LiveGirl designed for genuine connection.
+              {t("splash.lead")}
             </span>
           </p>
           <div className="splash-cta">
             <button className="btn-primary press" type="button" disabled={leaving} onClick={onContinue}>
-              Continue
+              {t("splash.continue")}
             </button>
           </div>
         </div>

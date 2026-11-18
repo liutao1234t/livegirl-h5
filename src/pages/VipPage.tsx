@@ -3,30 +3,31 @@ import { vipIap } from "../data/iap";
 import { StackShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { publicUrl } from "../lib/publicUrl";
+import { t, type MessageKey } from "../i18n";
 
-const perks = [
+const perks: { art: string; title: MessageKey; copy: MessageKey; tone: string }[] = [
   {
     art: publicUrl("/vip/card-shorts.png"),
-    title: "Premium\nShort Videos",
-    copy: "Access exclusive\ncontent",
+    title: "vip.shortsTitle",
+    copy: "vip.shortsCopy",
     tone: "shorts",
   },
   {
     art: publicUrl("/vip/card-msg.png"),
-    title: "Unlimited\nMessaging",
-    copy: "No message limits",
+    title: "vip.msgTitle",
+    copy: "vip.msgCopy",
     tone: "msg",
   },
   {
     art: publicUrl("/vip/card-contact.png"),
-    title: "Contact\nExchange",
-    copy: "Build private\nconnections",
+    title: "vip.contactTitle",
+    copy: "vip.contactCopy",
     tone: "contact",
   },
   {
     art: publicUrl("/vip/card-meet.png"),
-    title: "Offline\nMeetups",
-    copy: "Take chats\nto real life",
+    title: "vip.meetTitle",
+    copy: "vip.meetCopy",
     tone: "meet",
   },
 ];
@@ -42,7 +43,7 @@ export function VipPage() {
     <StackShell
       header={
         <div className="vip-bar">
-          <button className="circle-btn press" type="button" aria-label="Back" onClick={() => navigate(-1)}>
+          <button className="circle-btn press" type="button" aria-label={t("common.back")} onClick={() => navigate(-1)}>
             <span className="icon-box" style={{ width: 16, height: 16 }}>
               <img className="icon" src={publicUrl("/icons/back.svg")} alt="" />
             </span>
@@ -54,8 +55,8 @@ export function VipPage() {
         <img className="vip-curves" src={publicUrl("/vip/bg.svg")} alt="" />
         <header className="vip-hero">
           <img className="vip-crown" src={publicUrl("/vip/crown.png")} alt="" />
-          <h2>Upgrade to VIP</h2>
-          <p>Unlock extensive features and enjoy more</p>
+          <h2>{t("vip.upgrade")}</h2>
+          <p>{t("vip.sub")}</p>
         </header>
 
         <div className="vip-spot">
@@ -63,16 +64,16 @@ export function VipPage() {
             <img className="vip-tile-bg" src={publicUrl("/vip/card-coins.png")} alt="" />
             <div className="vip-coins-copy">
               <strong>2,000</strong>
-              <b>Bonus Coins</b>
-              <small>Get immediately</small>
+              <b>{t("vip.bonus")}</b>
+              <small>{t("vip.now")}</small>
             </div>
           </article>
           <article className="vip-tile vip-tile-video">
             <img className="vip-tile-bg" src={publicUrl("/vip/card-video.png")} alt="" />
-            <span className="vip-off">50% OFF</span>
+            <span className="vip-off">{t("vip.off")}</span>
             <div className="vip-video-copy">
-              <strong>Video Calls</strong>
-              <small>Chat longer for less</small>
+              <strong>{t("vip.calls")}</strong>
+              <small>{t("vip.callsSub")}</small>
             </div>
           </article>
         </div>
@@ -80,7 +81,7 @@ export function VipPage() {
         <div className="vip-more">
           <i />
           <img src={publicUrl("/vip/mini-crown.png")} alt="" />
-          <span>More VIP Privileges</span>
+          <span>{t("vip.more")}</span>
           <i />
         </div>
 
@@ -90,13 +91,13 @@ export function VipPage() {
               <img className="vip-tile-bg" src={perk.art} alt="" />
               <div className="vip-perk-copy">
                 <strong>
-                  {perk.title.split("\n").map((line) => (
-                    <span key={line}>{line}</span>
+                  {t(perk.title).split("\n").map((line, index) => (
+                    <span key={index}>{line}</span>
                   ))}
                 </strong>
                 <small>
-                  {perk.copy.split("\n").map((line) => (
-                    <span key={line}>{line}</span>
+                  {t(perk.copy).split("\n").map((line, index) => (
+                    <span key={index}>{line}</span>
                   ))}
                 </small>
               </div>
@@ -108,7 +109,7 @@ export function VipPage() {
           <img className="vip-tile-bg" src={publicUrl("/vip/card-buy.png")} alt="" />
           <p className="vip-price">
             <strong>$25.99</strong>
-            <span>One-time purchase</span>
+            <span>{t("vip.once")}</span>
           </p>
           <button
             className="vip-cta press"
@@ -123,7 +124,7 @@ export function VipPage() {
             }}
           >
             <img className="vip-cta-crown" src={publicUrl("/vip/btn-crown.png")} alt="" />
-            <span>{isVip ? "VIP Active" : "Get VIP Now"}</span>
+            <span>{isVip ? t("vip.active") : t("vip.get")}</span>
             <img className="vip-cta-arrow" src={publicUrl("/vip/btn-arrow.png")} alt="" />
           </button>
         </section>

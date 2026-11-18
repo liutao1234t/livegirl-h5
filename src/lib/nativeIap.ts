@@ -1,4 +1,5 @@
 import { type IapRequest } from "../data/iap";
+import { t } from "../i18n";
 import { postToNative } from "./nativeBridge";
 
 /** WKScriptMessageHandler name. Swift: `userContentController.add(self, name: "iap")`. */
@@ -103,14 +104,14 @@ function parseReason(raw: unknown): string | undefined {
 }
 
 export function iapSuccessToast(): string {
-  return "Purchase Success";
+  return t("toast.purchaseOk");
 }
 
 export function iapFailToast(reason?: string): string {
-  if (reason === "user_cancelled") return "Purchase cancelled";
-  if (reason === "pending") return "Purchase pending";
-  if (reason) return `Purchase failed · ${reason}`;
-  return "Purchase failed";
+  if (reason === "user_cancelled") return t("toast.purchaseCancel");
+  if (reason === "pending") return t("toast.purchasePending");
+  if (reason) return t("toast.purchaseFailReason", { reason });
+  return t("toast.purchaseFail");
 }
 
 function settle(ok: boolean, reason?: string) {

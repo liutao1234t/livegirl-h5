@@ -4,12 +4,13 @@ import { StackBar } from "../shells/StackBar";
 import { StackShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { publicUrl } from "../lib/publicUrl";
+import { t, type MessageKey } from "../i18n";
 
-const reasons = [
-  { label: "Request a refund", lines: ["Request a refund"] },
-  { label: "Report fraud or fraudulent information", lines: ["Report fraud or", "fraudulent information"] },
-  { label: "Report offensive, illegal, or insulting content", lines: ["Report offensive, illegal,", "or insulting content"] },
-] as const;
+const reasons: { label: MessageKey; lines: readonly MessageKey[] }[] = [
+  { label: "apple.refund", lines: ["apple.refund"] },
+  { label: "apple.fraud", lines: ["apple.fraud1", "apple.fraud2"] },
+  { label: "apple.offensive", lines: ["apple.off1", "apple.off2"] },
+];
 
 export function AppleSupportPage() {
   const navigate = useNavigate();
@@ -72,7 +73,7 @@ export function AppleSupportPage() {
   };
 
   return (
-    <StackShell header={<StackBar title="Apple Support" />}>
+    <StackShell header={<StackBar title={t("apple.title")} />}>
       <div
         className={`as-web ${submitted ? "is-done" : ""} ${open ? "is-pick" : ""}`}
         onClick={() => {
@@ -91,31 +92,31 @@ export function AppleSupportPage() {
 
         <div className="as-card" aria-hidden />
 
-        <h2 className="as-title">Report an issue</h2>
+        <h2 className="as-title">{t("apple.issue")}</h2>
         <button className="as-signout press" type="button" onClick={() => navigate("/app/me")}>
-          Sign out
+          {t("apple.signOut")}
         </button>
         <div className="as-rule" />
 
         {submitted ? (
           <>
             <p className="as-status">
-              <strong>Your Request Has Been Submitted</strong>
-              We’ll notify you of the result within three business days.
+              <strong>{t("apple.submitted")}</strong>
+              {t("apple.notify")}
             </p>
             <div className="as-actions">
               <button className="as-cancel press" type="button" onClick={onCancel}>
-                Cancel
+                {t("common.cancel")}
               </button>
               <button className="as-done press" type="button" onClick={() => navigate("/app/me")}>
-                Done
+                {t("common.done")}
               </button>
             </div>
           </>
         ) : (
           <>
-            <p className="as-help">Get help with content purchased through Apple.</p>
-            <div className="as-ask">May I ask what help you need?</div>
+            <p className="as-help">{t("apple.help")}</p>
+            <div className="as-ask">{t("apple.ask")}</div>
             <button
               className={`as-field press ${selected ? "is-filled" : ""}`}
               type="button"
@@ -125,14 +126,14 @@ export function AppleSupportPage() {
                 toggleMenu();
               }}
             >
-              {selected ? selected.label : "I Need..."}
+              {selected ? t(selected.label) : t("apple.need")}
             </button>
             <button
               className={`as-next press ${canNext ? "is-on" : ""} ${loading ? "is-wait" : ""}`}
               type="button"
               disabled={!canNext || loading}
               aria-busy={loading}
-              aria-label={loading ? "Submitting" : "Next"}
+              aria-label={loading ? t("common.submitting") : t("common.next")}
               onClick={(e) => {
                 e.stopPropagation();
                 onNext();
@@ -145,7 +146,7 @@ export function AppleSupportPage() {
                   ))}
                 </span>
               ) : (
-                "Next"
+                t("common.next")
               )}
             </button>
             {menuShown ? (
@@ -171,7 +172,7 @@ export function AppleSupportPage() {
                       <span className="as-opt-text">
                         {reason.lines.map((line) => (
                           <span key={line} className="as-opt-line">
-                            {line}
+                            {t(line)}
                           </span>
                         ))}
                       </span>
