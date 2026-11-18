@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { I18N_ENABLED } from "./config";
 
 export const LOCALES = ["en", "it", "de", "tr", "ar", "ja"] as const;
@@ -21,61 +20,58 @@ function isLocale(value: string): value is Locale {
 }
 
 type LocaleState = {
-  /** Last language picked in Settings. Ignored until `picked` is true. */
-  locale: Locale;
-  /** False until the user chooses a language. Startup then follows the phone. */
-  picked: boolean;
+  /** Manual choice for this visit. Null means follow the phone. */
+  choice: Locale | null;
+  /** Bumps when the system language changes so the UI re-renders. */
+  revision: number;
   setLocale: (next: Locale) => void;
 };
 
-function deviceLocale(): Locale {
-  if (typeof navigator === "undefined") return "en";
-  const raw = navigator.language || navigator.languages?.[0];
-  const code = raw?.trim().toLowerCase().split("-")[0] ?? "";
-  return isLocale(code) ? code : "en";
+function languageCode(raw: string | null | undefined): Locale | null {
+  if (!raw) return null;
+  const code = raw.trim().toLowerCase().split(/[-_]/)[0] ?? "";
+  return isLocale(code) ? code : null;
 }
 
-function resolveLocale(picked: boolean, saved: string): Locale {
+/** Current phone language. The first preferred tag wins; anything else stays English. */
+export function deviceLocale(): Locale {
+  if (typeof navigator === "undefined") return "en";
+  return languageCode(navigator.language) ?? languageCode(navigator.languages?.[0]) ?? "en";
+}
+
+function resolveLocale(choice: Locale | null): Locale {
   if (!I18N_ENABLED) return "en";
-  if (picked && isLocale(saved)) return saved;
+  if (choice && isLocale(choice)) return choice;
   return deviceLocale();
 }
 
-export const useLocaleStore = create<LocaleState>()(
-  persist(
-    (set) => ({
-      locale: "en",
-      picked: false,
-      setLocale: (next) => {
-        if (!isLocale(next)) return;
-        set({ locale: next, picked: true });
-        applyDocumentLocale();
-      },
-    }),
-    {
-      name: "livegirl-locale",
-      partialize: (s) => ({ locale: s.locale, picked: s.picked }),
-      onRehydrateStorage: () => (state) => {
-        if (state?.picked && !isLocale(state.locale)) {
-          useLocaleStore.setState({ picked: false, locale: "en" });
-        }
-        applyDocumentLocale();
-      },
-    },
-  ),
-);
+export const useLocaleStore = create<LocaleState>()((set) => ({
+  choice: null,
+  revision: 0,
+  setLocale: (next) => {
+    if (!isLocale(next)) return;
+    set({ choice: next });
+    applyDocumentLocale();
+  },
+}));
 
-/** Phone language when the user has not chosen one. Unsupported tags stay English. */
-export function locale(): Locale {
-  const { picked, locale: saved } = useLocaleStore.getState();
-  return resolveLocale(picked, saved);
+if (typeof window !== "undefined") {
+  window.addEventListener("languagechange", () => {
+    useLocaleStore.setState((state) => ({ choice: null, revision: state.revision + 1 }));
+    applyDocumentLocale();
+  });
 }
 
-/** Active language for rendering. Follows a Settings choice, otherwise the phone. */
+/** Phone language for this launch. A Settings choice applies only until the next launch. */
+export function locale(): Locale {
+  return resolveLocale(useLocaleStore.getState().choice);
+}
+
+/** Active language for rendering. Follows the phone unless Settings was used this visit. */
 export function useActiveLocale(): Locale {
-  const picked = useLocaleStore((s) => s.picked);
-  const saved = useLocaleStore((s) => s.locale);
-  return resolveLocale(picked, saved);
+  const choice = useLocaleStore((s) => s.choice);
+  useLocaleStore((s) => s.revision);
+  return resolveLocale(choice);
 }
 
 /** Keep layout left-to-right, including Arabic. */
