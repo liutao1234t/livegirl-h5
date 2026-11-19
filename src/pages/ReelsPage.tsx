@@ -198,7 +198,7 @@ export function ReelsPage() {
                     </small>
                   </span>
                 </button>
-                <p>{item.caption}</p>
+                <p>{hostCopy(item.caption)}</p>
                 <div className="reel-tags">
                   {(item.videoTags ?? []).map((tag) => {
                     const label = hostCopy(tag);

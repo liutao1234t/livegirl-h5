@@ -7,14 +7,34 @@ import tr from "./host/tr.json";
 import { I18N_ENABLED } from "./config";
 import { locale, type Locale } from "./locale";
 
-const tables: Partial<Record<Locale, Record<string, string>>> = { es, it, de, tr, ar, ja };
+function index(raw: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    const text = value.trim();
+    out[key] = text;
+    const trimmed = key.trim();
+    if (trimmed && out[trimmed] === undefined) out[trimmed] = text;
+  }
+  return out;
+}
+
+const tables: Partial<Record<Locale, Record<string, string>>> = {
+  es: index(es),
+  it: index(it),
+  de: index(de),
+  tr: index(tr),
+  ar: index(ar),
+  ja: index(ja),
+};
 
 /** Look up server copy by its English text. Unknown strings stay English. */
 export function hostCopy(text: string): string {
   if (!text || !I18N_ENABLED) return text;
   const lang = locale();
   if (lang === "en") return text;
-  return tables[lang]?.[text] ?? text;
+  const table = tables[lang];
+  if (!table) return text;
+  return table[text] ?? table[text.trim()] ?? text;
 }
 
 /** City line. Prefer the full "City, Country" string, which is the lookup key. */
