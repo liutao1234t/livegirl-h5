@@ -8,7 +8,7 @@ import { TabShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { useReelsStore } from "../store/reelsStore";
 import { publicUrl } from "../lib/publicUrl";
-import { t } from "../i18n";
+import { hostCopy, hostPlace, t } from "../i18n";
 
 function useReelsForeground(scrollerRef: RefObject<HTMLDivElement | null>) {
   const [paneShown, setPaneShown] = useState(true);
@@ -194,15 +194,16 @@ export function ReelsPage() {
                       <span className="icon-box" style={{ width: 11, height: 13 }}>
                         <img className="icon" src={publicUrl("/icons/pin.svg")} alt="" />
                       </span>
-                      {item.city}, {item.country}
+                      {hostPlace(item)}
                     </small>
                   </span>
                 </button>
                 <p>{item.caption}</p>
                 <div className="reel-tags">
-                  {(item.videoTags ?? []).map((t) => (
-                    <span key={t}>{t.startsWith("#") ? t : `#${t.replace(/\s/g, "")}`}</span>
-                  ))}
+                  {(item.videoTags ?? []).map((tag) => {
+                    const label = hostCopy(tag);
+                    return <span key={tag}>{label.startsWith("#") ? label : `#${label.replace(/\s/g, "")}`}</span>;
+                  })}
                 </div>
               </div>
               <div className="reel-side">

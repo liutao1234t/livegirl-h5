@@ -7,7 +7,7 @@ import { OfferGiftButton, TabShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { useHostsStore } from "../store/hostsStore";
 import { publicUrl } from "../lib/publicUrl";
-import { t } from "../i18n";
+import { hostCopy, t } from "../i18n";
 
 function PodiumCard({
   girl,
@@ -93,7 +93,7 @@ export function RankingPage() {
                 </span>
                 <span className="rank-meta">
                   <strong>{girl.name}</strong>
-                  <small>{girl.country}</small>
+                  <small>{hostCopy(girl.country)}</small>
                 </span>
                 <span className="heat">
                   <span className="icon-box" style={{ width: 11, height: 12 }}>

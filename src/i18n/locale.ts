@@ -1,13 +1,14 @@
 import { create } from "zustand";
 import { I18N_ENABLED } from "./config";
 
-export const LOCALES = ["en", "it", "de", "tr", "ar", "ja"] as const;
+export const LOCALES = ["en", "es", "it", "de", "tr", "ar", "ja"] as const;
 
 export type Locale = (typeof LOCALES)[number];
 
 /** Endonyms, so the menu stays readable in every language. */
 export const LOCALE_NAMES: Record<Locale, string> = {
   en: "English",
+  es: "Español",
   it: "Italiano",
   de: "Deutsch",
   tr: "Türkçe",

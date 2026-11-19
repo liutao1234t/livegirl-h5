@@ -7,7 +7,7 @@ import { StackShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { noteProfileView } from "../store/incomingCallStore";
 import { publicUrl } from "../lib/publicUrl";
-import { formatLastActive, t } from "../i18n";
+import { formatLastActive, hostCopy, hostPlace, t } from "../i18n";
 
 export function ProfilePage() {
   const { id = "isabella" } = useParams();
@@ -76,7 +76,7 @@ export function ProfilePage() {
                 <span className="icon-box" style={{ width: 12, height: 15 }}>
                   <img className="icon" src={publicUrl("/icons/pin.svg")} alt="" />
                 </span>
-                {girl.city}, {girl.country}
+                {hostPlace(girl)}
               </p>
             </div>
             <div style={{ textAlign: "right" }}>
@@ -127,7 +127,7 @@ export function ProfilePage() {
 
       <section className="panel">
         <h3>{t("profile.about")}</h3>
-        <p>{girl.bio}</p>
+        <p>{hostCopy(girl.bio)}</p>
       </section>
 
       <h3 className="section-title" style={{ fontSize: 12, letterSpacing: "0.6px", color: "var(--accent)", fontWeight: 600 }}>
@@ -136,7 +136,7 @@ export function ProfilePage() {
       <div className="tags">
         {girl.interests.map((tag) => (
           <span key={tag} className="tag">
-            {tag}
+            {hostCopy(tag)}
           </span>
         ))}
       </div>

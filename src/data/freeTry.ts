@@ -49,6 +49,7 @@ function mapFreeTryHost(host: FreeTryRaw): Girl {
     age: Number(host.age) || 0,
     city: cityFromContry(host.contry, host.nation),
     country: host.nation,
+    place: host.contry,
     category: "Hot",
     region: NATION_REGION[host.nation] ?? "Global",
     online,

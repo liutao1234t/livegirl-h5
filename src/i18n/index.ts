@@ -1,15 +1,17 @@
 import { ar } from "./ar";
 import { de } from "./de";
 import { en, type MessageKey } from "./en";
+import { es } from "./es";
 import { it } from "./it";
 import { ja } from "./ja";
 import { locale, type Locale } from "./locale";
 import { tr } from "./tr";
 
+export { hostCopy, hostPlace } from "./hostCopy";
 export { applyDocumentLocale, locale, LOCALE_NAMES, LOCALES, useActiveLocale, useLocaleStore } from "./locale";
 export type { Locale, MessageKey };
 
-const catalogs: Record<Locale, Record<MessageKey, string>> = { en, it, de, tr, ar, ja };
+const catalogs: Record<Locale, Record<MessageKey, string>> = { en, es, it, de, tr, ar, ja };
 
 const PRICE_OR_NUMBER = /\$\d[\d,]*(?:\.\d+)?|\d[\d,]*(?:\.\d+)?/g;
 

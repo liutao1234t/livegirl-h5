@@ -13,6 +13,8 @@ export type Girl = {
   age: number;
   city: string;
   country: string;
+  /** Original "City, Country" string. Display looks this up; filters keep `country`. */
+  place?: string;
   category: GirlCategory;
   region: GirlRegion;
   online: boolean;
@@ -87,6 +89,7 @@ function mapHost(host: HostRaw): Girl {
     age: Number(host.age) || 0,
     city: cityFromContry(host.contry, host.nation),
     country: host.nation,
+    place: host.contry,
     category: asCategory(host.Category),
     region: regionFromContinent(host.continent),
     online,
@@ -154,6 +157,7 @@ export const girls: Girl[] = [
     age: 24,
     city: "Milan",
     country: "Italy",
+    place: "Milan, Italy",
     category: "Hot",
     region: "Europe",
     online: true,

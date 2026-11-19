@@ -65,6 +65,7 @@ function mapReel(host: ReelRaw): Reel {
     age: Number(host.age) || 0,
     city: cityFromContry(host.contry, host.nation),
     country: host.nation,
+    place: host.contry,
     category: "Hot",
     region: regionFromNation(host.nation),
     online,

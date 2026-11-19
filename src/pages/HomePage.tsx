@@ -8,7 +8,7 @@ import { OfferGiftButton, TabShell } from "../shells/Shells";
 import { useAppStore } from "../store/appStore";
 import { useHostsStore } from "../store/hostsStore";
 import { publicUrl } from "../lib/publicUrl";
-import { t, type MessageKey } from "../i18n";
+import { hostCopy, t, type MessageKey } from "../i18n";
 
 const cats = ["Hot", "New", "Sexy", "Cute"] as const;
 const regions = ["Global", "America", "Europe", "Asia", "Africa", "Middle East"] as const;
@@ -69,7 +69,7 @@ function Card({ girl, tall, onOpen, onCall }: { girl: Girl; tall?: boolean; onOp
           <span className="icon-box" style={{ width: 10, height: 12 }}>
             <img className="icon" src={publicUrl("/icons/pin.svg")} alt="" />
           </span>
-          <span>{girl.country}</span>
+          <span>{hostCopy(girl.country)}</span>
         </p>
       </div>
       <button
