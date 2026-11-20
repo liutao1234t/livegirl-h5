@@ -6,7 +6,7 @@ let cachedKey: string | null = null;
 let cachedToken: string | null = null;
 
 export function resolveSupportApiKey() {
-  const fromEnv = import.meta.env.VITE_DEEPSEEK_API_KEY?.trim();
+  const fromEnv = import.meta.env.VITE_CHAT_API_KEY?.trim();
   if (fromEnv) return Promise.resolve(fromEnv);
 
   const accessToken = useAppStore.getState().accessToken;

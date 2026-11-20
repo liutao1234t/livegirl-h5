@@ -1,5 +1,6 @@
 import type { Girl } from "../data/girls";
 import type { ChatMsg } from "../data/messages";
+import { chatCompletionsUrl, chatModel, hiddenBrand } from "./chatRoute";
 import { resolveSupportApiKey } from "./supportKey";
 
 export const HOST_REPLY_MIN_MS = 5_000;
@@ -27,10 +28,7 @@ export function fallbackHostReply() {
 }
 
 function endpoint() {
-  const custom = import.meta.env.VITE_DEEPSEEK_BASE_URL?.replace(/\/$/, "");
-  if (custom) return `${custom}/chat/completions`;
-  if (import.meta.env.DEV) return "/ds/chat/completions";
-  return "https://api.deepseek.com/chat/completions";
+  return chatCompletionsUrl();
 }
 
 function systemPrompt(girl: Girl) {
@@ -52,7 +50,7 @@ Rules:
 - Examples: "wait what", "omg yes", "haha ok", "you serious?", "mm tell me", "lol same".
 - Match the user's language. If they write Chinese, keep it equally short (a few characters, not a paragraph).
 - Occasional emoji is fine (0–1). No markdown, no lists, no hashtags.
-- Never say you are an AI, DeepSeek, a bot, ChatGPT, or a language model.
+- Never say you are an AI, ${hiddenBrand()}, a bot, ChatGPT, or a language model.
 - Never ask for phone numbers, socials, WhatsApp, or to leave this app.
 - Don't lecture about coins, VIP, or refunds. If they ask, stay in character and point them to Me or Online Support.
 - Don't invite a video call in every reply. Only mention a call if it fits naturally.
@@ -96,7 +94,7 @@ function sanitize(text: string, name: string) {
 
 export async function askHostReply(girl: Girl, history: ChatMsg[]): Promise<string> {
   const apiKey = await resolveSupportApiKey();
-  const model = import.meta.env.VITE_DEEPSEEK_MODEL || "deepseek-v4-flash";
+  const model = chatModel();
   if (!apiKey) return fallbackHostReply();
 
   try {
