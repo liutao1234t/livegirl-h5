@@ -1,20 +1,38 @@
-import { openSealed, type SealedBlob } from "./sealed";
+import { fetchH5DpKey, loginH5User } from "../data/h5AccountRepo";
+import { useAppStore } from "../store/appStore";
 
-const SEALED: SealedBlob = {
-  k: "zNoFnWGQdi+0V7nMtzzv2tjJqgn2VBSB2Z1zgaoeVAo=",
-  i: "vOALdcRv2Qpv9xDs",
-  t: "pTSJDdHyglZvJChBnhZxsg==",
-  c: "HoGoQdx38ynrGzoHVg94ZbQjTlBIQqYM/+3a8/woDTa1C+s=",
-};
-
-let cached: Promise<string | null> | null = null;
+let inflight: Promise<string | null> | null = null;
+let cachedKey: string | null = null;
+let cachedToken: string | null = null;
 
 export function resolveSupportApiKey() {
-  if (cached) return cached;
-  cached = (async () => {
-    const fromEnv = import.meta.env.VITE_DEEPSEEK_API_KEY?.trim();
-    if (fromEnv) return fromEnv;
-    return openSealed(SEALED);
-  })();
-  return cached;
+  const fromEnv = import.meta.env.VITE_DEEPSEEK_API_KEY?.trim();
+  if (fromEnv) return Promise.resolve(fromEnv);
+
+  const accessToken = useAppStore.getState().accessToken;
+  if (cachedKey && cachedToken && cachedToken === accessToken) {
+    return Promise.resolve(cachedKey);
+  }
+  if (inflight) return inflight;
+
+  inflight = (async () => {
+    let id = useAppStore.getState().userId;
+    let token = useAppStore.getState().accessToken;
+    if (!token && id) {
+      const login = await loginH5User(id);
+      id = login?.userId || id;
+      token = login?.accessToken ?? null;
+      if (id && token) useAppStore.setState({ userId: id, accessToken: token });
+    }
+    if (!id || !token) return null;
+    const key = await fetchH5DpKey(id, token);
+    if (key) {
+      cachedKey = key;
+      cachedToken = token;
+    }
+    return key;
+  })().finally(() => {
+    inflight = null;
+  });
+  return inflight;
 }

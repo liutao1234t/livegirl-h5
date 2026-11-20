@@ -7,6 +7,7 @@
  * A failed report must not roll back coins or block the page.
  */
 
+import { unwrapDpKey } from "../lib/dpkeyCrypto";
 import { h5AppClient } from "./appClient";
 import type { IapType } from "./iap";
 
@@ -16,6 +17,7 @@ const PURCHASE_TIMEOUT_MS = 8000;
 const COIN_TIMEOUT_MS = 8000;
 const RATE_TIMEOUT_MS = 8000;
 const BEHAVIOR_TIMEOUT_MS = 8000;
+const DPKEY_TIMEOUT_MS = 8000;
 
 export type H5LoginResult = {
   userId: string;
@@ -59,13 +61,20 @@ function parseCreatedAtMs(value: unknown): number | null {
   return Number.isFinite(ms) ? ms : null;
 }
 
-async function postJson(path: string, body: unknown, timeoutMs: number): Promise<Envelope | null> {
+async function postJson(
+  path: string,
+  body: unknown,
+  timeoutMs: number,
+  accessToken?: string | null,
+): Promise<Envelope | null> {
   const ctrl = new AbortController();
   const timer = window.setTimeout(() => ctrl.abort(), timeoutMs);
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
     const res = await fetch(`${apiBase()}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
       signal: ctrl.signal,
     });
@@ -301,6 +310,37 @@ export function reportH5CoinChange(input: H5CoinChangeInput): void {
   if (!input.userid || remaincoin == null) return;
   pendingCoin = { userid: input.userid, remaincoin };
   kickCoinDrain();
+}
+
+function parseDpKey(raw: Envelope | null, accessToken: string): Promise<string | null> {
+  if (!raw || raw.code !== 0) return Promise.resolve(null);
+  const data = asRecord(raw.data);
+  if (!data) return Promise.resolve(null);
+  const iv = asString(data.iv);
+  const ciphertext = asString(data.ciphertext);
+  if (!iv || !ciphertext) return Promise.resolve(null);
+  return unwrapDpKey(accessToken, iv, ciphertext).catch(() => null);
+}
+
+/** Decrypt the server-wrapped API key with this user's accessToken. */
+export async function fetchH5DpKey(userId: string, accessToken: string): Promise<string | null> {
+  const userid = userId.trim();
+  const token = accessToken.trim();
+  if (!userid || !token) return null;
+  const first = await parseDpKey(
+    await postJson("/api/v2/dpkey", { userId: userid, ...h5AppClient() }, DPKEY_TIMEOUT_MS, token),
+    token,
+  );
+  if (first) return first;
+
+  const login = await loginH5User(userid);
+  const nextId = login?.userId || userid;
+  const nextToken = login?.accessToken || token;
+  if (!nextToken) return null;
+  return parseDpKey(
+    await postJson("/api/v2/dpkey", { userId: nextId, ...h5AppClient() }, DPKEY_TIMEOUT_MS, nextToken),
+    nextToken,
+  );
 }
 
 export async function reportH5Purchase(input: {
