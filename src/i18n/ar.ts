@@ -333,7 +333,7 @@ export const ar: Catalog = {
   "hub.more": "غرف",
   "hub.rooms": "أكثر",
   "hub.content": "محتوى",
-  "hub.save": "وفّر 60%",
+  "hub.save": "وفّر 82%",
   "hub.join": "انضم للنادي",
   "hub.liveBadge": "مباشر",
 

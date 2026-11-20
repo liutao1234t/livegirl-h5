@@ -5,7 +5,7 @@
  * 6758287054 — com.user*.normal / com.user99.99.best
  * 6752740659 — com.normaloff.* / com.bestoff.9999
  *
- * usd19_99 is coins, the 3-day pass, or Live Hub unlock. usd25_99 is coins or VIP.
+ * usd8_99 is coins or Live Hub unlock. usd19_99 is coins or the 3-day pass. usd25_99 is coins or VIP.
  * An unknown app id uses the 6758287054 catalog.
  */
 import { h5AppClient } from "./appClient";
@@ -72,7 +72,7 @@ export type IapProductId = string;
  * newbie   — 新用户特惠 pop ($1.99)
  * coins    — 金币页普通档
  * reward3  — 3 天无限通话 ($19.99，与金币档同 id)
- * livehub  — Live Hub 继续观看 ($19.99，与金币档同 id)
+ * livehub  — Live Hub 继续观看 ($8.99，与金币档同 id)
  * vip      — VIP ($25.99，与金币档同 id)
  */
 export type IapType = "newbie" | "coins" | "reward3" | "vip" | "livehub";
@@ -103,7 +103,7 @@ export function reward3Iap(): IapRequest {
 }
 
 export function liveHubIap(): IapRequest {
-  return requestFor("usd19_99", "livehub");
+  return requestFor("usd8_99", "livehub");
 }
 
 export function vipIap(): IapRequest {

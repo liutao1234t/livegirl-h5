@@ -331,7 +331,7 @@ export const en = {
   "hub.more": "More",
   "hub.rooms": "Live Rooms",
   "hub.content": "Content",
-  "hub.save": "Save 60%",
+  "hub.save": "Save 82%",
   "hub.join": "JOIN CLUB",
   "hub.liveBadge": "LIVE",
 

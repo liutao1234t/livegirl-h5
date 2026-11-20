@@ -333,7 +333,7 @@ export const ja: Catalog = {
   "hub.more": "もっと",
   "hub.rooms": "多いルーム",
   "hub.content": "コンテンツ",
-  "hub.save": "60%お得",
+  "hub.save": "82%お得",
   "hub.join": "クラブに入る",
   "hub.liveBadge": "ライブ",
 

@@ -333,7 +333,7 @@ export const tr: Catalog = {
   "hub.more": "Daha",
   "hub.rooms": "çok oda",
   "hub.content": "İçerik",
-  "hub.save": "%60 indirim",
+  "hub.save": "%82 indirim",
   "hub.join": "CLUB’A KATIL",
   "hub.liveBadge": "CANLI",
 

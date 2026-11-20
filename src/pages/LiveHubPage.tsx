@@ -615,7 +615,7 @@ export function LiveHubUnlock() {
         <div className="livehub-offer">
           <span className="livehub-save">{t("hub.save")}</span>
           <p className="livehub-price">
-            $19.99 <s>$49.99</s>
+            ${liveHubIap().price} <s>$49.99</s>
           </p>
           <button type="button" className="livehub-cta press" disabled={payBusy} onClick={buy}>
             {t("hub.join")}

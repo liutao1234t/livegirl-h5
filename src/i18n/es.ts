@@ -333,7 +333,7 @@ export const es: Catalog = {
   "hub.more": "Más",
   "hub.rooms": "salas",
   "hub.content": "Contenido",
-  "hub.save": "Ahorra 60%",
+  "hub.save": "Ahorra 82%",
   "hub.join": "ENTRAR",
   "hub.liveBadge": "EN VIVO",
 

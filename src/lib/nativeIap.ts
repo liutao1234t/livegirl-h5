@@ -34,8 +34,9 @@ let simulateTimer: number | undefined;
  *   window.onIAPFail({ reason: "product_not_found" })
  *   window.onIAPResult({ success: true })
  *
- * Type stays on the H5 pending click. The $19.99 id is coins or 3-day;
- * the $25.99 id is coins or VIP. Which string is sent depends on appid.
+ * Type stays on the H5 pending click. The $8.99 id is coins or Live Hub;
+ * the $19.99 id is coins or 3-day; the $25.99 id is coins or VIP.
+ * Which string is sent depends on appid.
  */
 function nativeWindow() {
   return window as Window & {

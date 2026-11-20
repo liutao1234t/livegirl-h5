@@ -307,7 +307,7 @@ export async function reportH5Purchase(input: {
   userId: string;
   iapId: string;
   amount: string;
-  /** Which H5 button started this purchase. Same StoreKit id can be coins, reward3, livehub, or vip. */
+  /** Which H5 button started this purchase. Same StoreKit id can be coins or livehub ($8.99), coins or reward3 ($19.99), coins or vip ($25.99). */
   type: IapType;
 }): Promise<H5PurchaseResult | null> {
   if (!input.userId || !input.iapId || !input.type) return null;
