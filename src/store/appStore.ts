@@ -718,7 +718,7 @@ export const useAppStore = create<AppState>()(
         });
       },
       buyReward3: () => {
-        if (get().reward3Until != null) return;
+        if (isReward3Active(get().reward3Until)) return;
         set({
           reward3Until: Date.now() + REWARD3_DURATION_MS,
           hasPaid: true,
@@ -730,7 +730,7 @@ export const useAppStore = create<AppState>()(
       },
       offerReward3IfDue: () => {
         const { overlay, payBusy, userId, registeredAt, reward3Until, activeCall } = get();
-        if (reward3Until != null) return;
+        if (isReward3Active(reward3Until)) return;
         if (overlay || payBusy) return;
         if (isInVideoCall(activeCall)) return;
         const at = resolveRegisteredAt(userId, registeredAt);
