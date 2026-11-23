@@ -1,9 +1,8 @@
+import { h5AppClient } from "../data/appClient";
+import { appProfile, APP_PROFILES } from "../data/appProfile";
 import { type IapRequest } from "../data/iap";
 import { t } from "../i18n";
 import { postToNative } from "./nativeBridge";
-
-/** WKScriptMessageHandler name. Swift: `userContentController.add(self, name: "iap")`. */
-export const IAP_HANDLER = "iap";
 
 export const IAP_SIM_MS = 3000;
 
@@ -23,29 +22,26 @@ let simulateTimer: number | undefined;
 /**
  * WKWebView contract
  *
- * H5 → Swift (`webkit.messageHandlers.iap.postMessage`):
- *   { productId: "<storekit id for this app and tier>" }
+ * H5 → Swift (`webkit.messageHandlers.<handler>.postMessage`):
+ *   { <productField>: "<storekit id for this app and tier>" }
+ * Handler name and field come from the app profile (iap/productId, or playertime/playid).
  *
  * Readable field (updated when a purchase starts):
  *   window.iapProductId
  *
- * Swift → H5 (`evaluateJavaScript`), any one of:
- *   window.onIAPSuccess()
- *   window.onIAPFail({ reason: "product_not_found" })
- *   window.onIAPResult({ success: true })
+ * Swift → H5 (`evaluateJavaScript`), names from that app's profile:
+ *   window.onIAPSuccess() / window.playsuccess({ success, playid })
+ *   window.onIAPFail({ reason }) / window.playfail({ success, playid, reason })
+ *   window.onIAPResult({ success }) / window.playresult({ success, playid })
  *
  * Type stays on the H5 pending click. The $8.99 id is coins or Live Hub;
  * the $19.99 id is coins or 3-day; the $25.99 id is coins or VIP.
- * Which string is sent depends on appid.
  */
+type IapCallback = (payload?: unknown) => void;
+
 function nativeWindow() {
-  return window as Window & {
+  return window as unknown as Window & Record<string, IapCallback | string | undefined> & {
     iapProductId?: string;
-    onIAPSuccess?: (payload?: unknown) => void;
-    onIAPFail?: (payload?: unknown) => void;
-    onIAPResult?: (payload?: unknown) => void;
-    iapSuccess?: (payload?: unknown) => void;
-    iapFail?: (payload?: unknown) => void;
   };
 }
 
@@ -109,8 +105,8 @@ export function iapSuccessToast(): string {
 }
 
 export function iapFailToast(reason?: string): string {
-  if (reason === "user_cancelled") return t("toast.purchaseCancel");
-  if (reason === "pending") return t("toast.purchasePending");
+  if (reason === "user_cancelled" || reason === "player_cancelled") return t("toast.purchaseCancel");
+  if (reason === "pending" || reason === "player_pending") return t("toast.purchasePending");
   if (reason) return t("toast.purchaseFailReason", { reason });
   return t("toast.purchaseFail");
 }
@@ -129,14 +125,19 @@ function settle(ok: boolean, reason?: string) {
 export function installNativeIapBridge() {
   if (typeof window === "undefined") return;
   const w = nativeWindow();
-  w.onIAPSuccess = () => settle(true);
-  w.onIAPFail = (raw?: unknown) => settle(false, parseReason(raw));
-  w.iapSuccess = w.onIAPSuccess;
-  w.iapFail = w.onIAPFail;
-  w.onIAPResult = (raw?: unknown) => {
-    const flag = parseSuccessFlag(raw);
-    settle(flag !== false, parseReason(raw));
-  };
+  for (const profile of Object.values(APP_PROFILES)) {
+    for (const name of profile.bridge.success) w[name] = () => settle(true);
+    for (const name of profile.bridge.fail) {
+      w[name] = (raw?: unknown) => settle(false, parseReason(raw));
+    }
+    const result = profile.bridge.result;
+    if (result) {
+      w[result] = (raw?: unknown) => {
+        const flag = parseSuccessFlag(raw);
+        settle(flag !== false, parseReason(raw));
+      };
+    }
+  }
 }
 
 export function cancelPendingIap() {
@@ -153,12 +154,17 @@ export function requestIap(request: IapRequest): Promise<IapOutcome> {
   if (typeof window === "undefined") return Promise.resolve({ ok: false, reason: "no_window" });
   if (pending) return Promise.resolve({ ok: false, reason: "busy" });
 
+  const profile = appProfile(h5AppClient().appid);
+  if (!request.productId || !profile) {
+    return Promise.resolve({ ok: false, reason: "product_not_found" });
+  }
+
   publishFields(request);
 
   return new Promise((resolve) => {
     pending = { request, resolve };
-    const posted = postToNative(IAP_HANDLER, {
-      productId: request.productId,
+    const posted = postToNative(profile.bridge.handler, {
+      [profile.bridge.productField]: request.productId,
     });
     if (posted) return;
     if (import.meta.env.DEV) {

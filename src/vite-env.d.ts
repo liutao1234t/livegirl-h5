@@ -18,5 +18,8 @@ interface Window {
   onIAPResult?: (payload?: unknown) => void;
   iapSuccess?: (payload?: unknown) => void;
   iapFail?: (payload?: unknown) => void;
+  playsuccess?: (payload?: unknown) => void;
+  playfail?: (payload?: unknown) => void;
+  playresult?: (payload?: unknown) => void;
 }
 
