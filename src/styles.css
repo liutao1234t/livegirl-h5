@@ -871,40 +871,10 @@ html.is-keyboard .tab-bar {
   padding: 0 20px max(40px, env(safe-area-inset-bottom));
 }
 
-.splash-copy,
-.splash-cta {
-  opacity: 0;
-  animation: splash-rise var(--dur-page) var(--ease) both;
-}
-
-.splash-copy {
-  display: block;
-}
-
-.splash-copy-1 {
-  animation-delay: 40ms;
-}
-
-.splash-copy-2 {
-  animation-delay: 140ms;
-}
-
-.splash-cta {
-  display: flex;
-  justify-content: center;
-  animation-delay: 240ms;
-}
-
-@keyframes splash-rise {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 18px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
+.splash-copy { display: block; }
+.splash-cta { display: flex; justify-content: center; }
+.splash-bg img { opacity: 0; transition: opacity 240ms ease; }
+.splash-bg img.is-ready { opacity: 1; }
 
 .btn-primary:disabled {
   pointer-events: none;

@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import { BrowserRouter, useLocation } from "react-router-dom";
+import { BrowserRouter, useLocation, useNavigate } from "react-router-dom";
 import { useKeyboardInset } from "./hooks/useKeyboardInset";
 import { applyDocumentLocale, prepareLocale, useActiveLocale, useLocaleStore } from "./i18n";
 import { NavStage } from "./shells/NavStage";
 import { OverlayHost } from "./shells/OverlayHost";
+import { useAppStore } from "./store/appStore";
 import { useHostsStore } from "./store/hostsStore";
 import { IncomingCallLayer } from "./shells/IncomingCallLayer";
 import { IncomingCallGate, startIncomingCallDispatch } from "./store/incomingCallStore";
@@ -39,6 +40,14 @@ export function App() {
 // Keep catalog requests and dispatchers away from the landing video's first frame.
 function StartupTasks() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (document.documentElement.dataset.bootContinue !== "1") return;
+    delete document.documentElement.dataset.bootContinue;
+    void useAppStore.getState().startSession();
+    const livehubReturn = new URLSearchParams(window.location.search).get("livehub") === "1";
+    navigate(livehubReturn ? "/app/home?livehub=1" : "/app/home", { replace: true });
+  }, [navigate]);
   const inApp = pathname !== "/";
   useEffect(() => {
     if (!inApp) return;

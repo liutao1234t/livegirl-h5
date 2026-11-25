@@ -13,8 +13,14 @@ export function SplashPage() {
   const livehubReturn = new URLSearchParams(window.location.search).get("livehub") === "1";
   const [recoverHome] = useState(hasPendingLiveHubReturn);
   const [leaving, setLeaving] = useState(false);
+  const [posterReady, setPosterReady] = useState(false);
   const [live, setLive] = useState(false);
   const bgRef = useRef<HTMLDivElement>(null);
+  const posterRef = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    const image = posterRef.current;
+    if (image?.complete && image.naturalWidth > 0) setPosterReady(true);
+  }, []);
 
   useEffect(() => {
     if (seenSplash && recoverHome) {
@@ -55,7 +61,14 @@ export function SplashPage() {
     <FullscreenShell>
       <div className="splash">
         <div ref={bgRef} className={`splash-bg${live ? " is-live" : ""}`} aria-hidden>
-          <img src={LANDING_POSTER} alt="" />
+          <div className={`startup-placeholder${posterReady || live ? " is-loaded" : ""}`} />
+          <img
+            ref={posterRef}
+            src={LANDING_POSTER}
+            alt=""
+            className={posterReady ? "is-ready" : ""}
+            onLoad={() => setPosterReady(true)}
+          />
         </div>
         <div className="splash-body">
           <h1>

@@ -11,15 +11,50 @@
     <meta name="theme-color" content="#000000" />
     <link rel="preload" as="image" href="%BASE_URL%images/splash-poster.jpg" />
     <style>
-      html, body { margin: 0; width: 100%; height: 100%; background: #230c12; }
-      .boot-cover { position: fixed; inset: 0; background: #230c12; }
-      .boot-cover img { width: 100%; height: 100%; object-fit: cover; }
-      .boot-cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, #230c12, rgba(35,12,18,.6) 50%, transparent); }
+      html, body { margin: 0; width: 100%; height: 100%; background: #49203c; }
+      #boot-screen { position: fixed; inset: 0; overflow: hidden; color: #fff; font-family: "Plus Jakarta Sans", "Be Vietnam Pro", -apple-system, sans-serif; }
+      .startup-placeholder { position: absolute; inset: 0; overflow: hidden; background: radial-gradient(ellipse at 75% 20%, #b45b85 0%, transparent 55%), radial-gradient(ellipse at 12% 50%, #6c386c 0%, transparent 60%), linear-gradient(155deg, #71304e, #230c12); }
+      .startup-placeholder::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,215,235,.16) 50%, transparent); transform: translateX(-100%); animation: startup-shimmer 2.4s ease-in-out infinite; }
+      .startup-placeholder.is-loaded::after { animation: none; opacity: 0; }
+      @keyframes startup-shimmer { to { transform: translateX(100%); } }
+      .boot-body { position: relative; box-sizing: border-box; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 20px max(40px, env(safe-area-inset-bottom)); background: linear-gradient(to top, #230c12, rgba(35,12,18,.6) 50%, transparent); }
+      .boot-body h1 { margin: 0 0 16px; font-size: 34px; font-weight: 800; letter-spacing: -.85px; line-height: 41px; }
+      .boot-body p { margin: 0 0 32px; color: #e0bfbf; font-size: 17px; line-height: 22px; }
+      #boot-continue { box-sizing: border-box; flex-shrink: 0; align-self: center; width: 280px; max-width: 100%; min-height: 60px; padding: 0 16px; border: 0; border-radius: 9999px; color: #fff; font: 700 20px "Plus Jakarta Sans", "Be Vietnam Pro", -apple-system, sans-serif; background: linear-gradient(90deg, #f994a0, #e32154); box-shadow: 0 0 10px rgba(222,5,65,.4); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+      #boot-continue:disabled { opacity: .8; cursor: wait; }
+      @media (prefers-reduced-motion: reduce) { .startup-placeholder::after { animation: none; transform: none; } }
     </style>
+    <link id="app-styles" rel="stylesheet" href="/src/styles.css" media="print" onload="this.media='all'" />
     <title>LiveGirl</title>
   </head>
   <body>
-    <div id="root"><div class="boot-cover" aria-hidden="true"><img src="%BASE_URL%images/splash-poster.jpg" alt="" fetchpriority="high" /></div></div>
+    <div id="root">
+      <section id="boot-screen">
+        <div class="startup-placeholder" aria-hidden="true"></div>
+        <div class="boot-body">
+          <h1><span data-boot-copy="0">__STARTUP_TEXT_0__</span><br /><span data-boot-copy="1">__STARTUP_TEXT_1__</span></h1>
+          <p data-boot-copy="2">__STARTUP_TEXT_2__</p>
+          <button id="boot-continue" type="button" data-boot-copy="3">__STARTUP_TEXT_3__</button>
+        </div>
+      </section>
+    </div>
+    <script>
+      (function () {
+        var copy = __STARTUP_COPY__;
+        var language = (navigator.language || (navigator.languages || [])[0] || "en").trim().toLowerCase().split(/[-_]/)[0];
+        var text = copy[language] || copy.en;
+        document.documentElement.lang = copy[language] ? language : "en";
+        document.querySelectorAll("[data-boot-copy]").forEach(function (node) {
+          node.textContent = text[Number(node.getAttribute("data-boot-copy"))];
+        });
+        document.getElementById("boot-continue").addEventListener("click", function () {
+          document.documentElement.dataset.bootContinue = "1";
+          this.disabled = true;
+          this.setAttribute("aria-busy", "true");
+          this.textContent = text[4] + "…";
+        });
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

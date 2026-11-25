@@ -4,8 +4,10 @@ import basicSsl from "@vitejs/plugin-basic-ssl";
 import { fileURLToPath, URL } from "node:url";
 import { chatProxyOrigin } from "./src/lib/chatRoute";
 
+import { startupShell } from "./scripts/startupShell";
+
 export default defineConfig({
-  plugins: [react(), basicSsl()],
+  plugins: [startupShell(), react(), basicSsl()],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
