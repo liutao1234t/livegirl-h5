@@ -1,23 +1,37 @@
-import { ar } from "./ar";
-import { de } from "./de";
+import { loadHostCopy } from "./hostCopy";
 import { en, type MessageKey } from "./en";
-import { es } from "./es";
-import { it } from "./it";
-import { ja } from "./ja";
 import { locale, type Locale } from "./locale";
-import { tr } from "./tr";
 
 export { hostCopy, hostPlace } from "./hostCopy";
 export { applyDocumentLocale, locale, LOCALE_NAMES, LOCALES, useActiveLocale, useLocaleStore } from "./locale";
 export type { Locale, MessageKey };
 
-const catalogs: Record<Locale, Record<MessageKey, string>> = { en, es, it, de, tr, ar, ja };
+const catalogs: Partial<Record<Locale, Record<MessageKey, string>>> = { en };
+const loaders = {
+  es: () => import("./es").then((m) => m.es), it: () => import("./it").then((m) => m.it),
+  de: () => import("./de").then((m) => m.de), tr: () => import("./tr").then((m) => m.tr),
+  ar: () => import("./ar").then((m) => m.ar), ja: () => import("./ja").then((m) => m.ja),
+};
+const pending = new Map<Locale, Promise<void>>();
+export function prepareLocale(lang: Locale = locale()): Promise<void> {
+  if (lang === "en") return Promise.resolve();
+  const existing = pending.get(lang);
+  if (existing) return existing;
+  const job = Promise.all([loaders[lang](), loadHostCopy(lang)]).then(([catalog]) => {
+    catalogs[lang] = catalog;
+  }).catch(() => {
+    // English remains available offline; allow a later attempt to retry.
+    pending.delete(lang);
+  });
+  pending.set(lang, job);
+  return job;
+}
 
 const PRICE_OR_NUMBER = /\$\d[\d,]*(?:\.\d+)?|\d[\d,]*(?:\.\d+)?/g;
 
 export function t(key: MessageKey, vars?: Record<string, string | number>): string {
   const lang = locale();
-  let text = catalogs[lang][key] ?? en[key];
+  let text = catalogs[lang]?.[key] ?? en[key];
   if (vars) {
     for (const [name, value] of Object.entries(vars)) {
       text = text.replaceAll(`{${name}}`, String(value));

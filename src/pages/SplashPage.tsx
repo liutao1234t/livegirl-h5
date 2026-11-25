@@ -33,6 +33,15 @@ export function SplashPage() {
     return mountLandingVideo(host, () => setLive(true));
   }, [seenSplash, livehubReturn, recoverHome]);
 
+  useEffect(() => {
+    if (!live) return;
+    // Warm the next screen only after the landing video has presented a frame.
+    const timer = window.setTimeout(() => {
+      void import("./HomePage").catch(() => undefined);
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [live]);
+
   const onContinue = () => {
     if (leaving) return;
     setLeaving(true);

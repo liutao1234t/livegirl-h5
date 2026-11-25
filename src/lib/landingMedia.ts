@@ -4,61 +4,50 @@ import { publicUrl } from "./publicUrl";
 export const LANDING_POSTER = publicUrl("/images/splash-poster.jpg");
 export const LANDING_VIDEO = publicUrl("/videos/landing.mp4");
 
-let clip: HTMLVideoElement | null = null;
-let parking: HTMLDivElement | null = null;
-
-function ensureParking() {
-  if (parking || typeof document === "undefined") return parking;
-  parking = document.createElement("div");
-  parking.setAttribute("aria-hidden", "true");
-  parking.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;";
-  document.body.appendChild(parking);
-  return parking;
-}
-
-function ensureClip() {
-  if (clip) return clip;
-  clip = document.createElement("video");
-  clip.className = "splash-clip";
-  clip.setAttribute("aria-hidden", "true");
-  armInlineVideo(clip);
-  clip.loop = true;
-  clip.autoplay = true;
-  clip.preload = "auto";
-  clip.poster = LANDING_POSTER;
-  clip.src = LANDING_VIDEO;
-  clip.load();
-  void clip.play().catch(() => undefined);
-  ensureParking()?.appendChild(clip);
-  return clip;
-}
-
-export function warmLandingMedia() {
-  if (typeof document === "undefined") return;
-  const img = new Image();
-  img.src = LANDING_POSTER;
-  ensureClip();
-}
-
-export function isLandingFrameReady(video: HTMLVideoElement) {
-  return video.videoWidth > 0 && video.readyState >= 2;
-}
-
 export function mountLandingVideo(host: HTMLElement, onReady: () => void) {
-  const video = ensureClip();
-  const mark = () => {
-    if (isLandingFrameReady(video)) onReady();
+  const video = document.createElement("video");
+  video.className = "splash-clip";
+  video.setAttribute("aria-hidden", "true");
+  armInlineVideo(video);
+  video.loop = true;
+  video.autoplay = true;
+  video.preload = "auto";
+  video.poster = LANDING_POSTER;
+  let disposed = false;
+  let revealed = false;
+  let frame = 0;
+  let raf = 0;
+  const reveal = () => {
+    if (disposed || revealed) return;
+    revealed = true;
+    onReady();
   };
-  video.addEventListener("loadeddata", mark);
-  video.addEventListener("canplay", mark);
-  video.addEventListener("playing", mark);
+  const playing = () => {
+    // Older WebViews lack video-frame callbacks. Allow a paint before revealing.
+    if (typeof video.requestVideoFrameCallback === "function") return;
+    raf = requestAnimationFrame(() => {
+      raf = requestAnimationFrame(() => {
+        if (!video.paused && video.readyState >= 2) reveal();
+      });
+    });
+  };
+  video.addEventListener("playing", playing);
   host.appendChild(video);
-  void video.play().catch(() => undefined);
-  mark();
+  if (typeof video.requestVideoFrameCallback === "function") {
+    frame = video.requestVideoFrameCallback(reveal);
+  }
+  video.src = LANDING_VIDEO;
+  void video.play().catch(() => {
+    // Keep the poster and Continue button usable when autoplay is unavailable.
+  });
   return () => {
-    video.removeEventListener("loadeddata", mark);
-    video.removeEventListener("canplay", mark);
-    video.removeEventListener("playing", mark);
-    ensureParking()?.appendChild(video);
+    disposed = true;
+    video.removeEventListener("playing", playing);
+    if (frame) video.cancelVideoFrameCallback(frame);
+    cancelAnimationFrame(raf);
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    video.remove();
   };
 }

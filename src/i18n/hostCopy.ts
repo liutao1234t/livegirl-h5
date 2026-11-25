@@ -1,9 +1,3 @@
-import ar from "./host/ar.json";
-import de from "./host/de.json";
-import es from "./host/es.json";
-import it from "./host/it.json";
-import ja from "./host/ja.json";
-import tr from "./host/tr.json";
 import { I18N_ENABLED } from "./config";
 import { locale, type Locale } from "./locale";
 
@@ -18,14 +12,17 @@ function index(raw: Record<string, string>): Record<string, string> {
   return out;
 }
 
-const tables: Partial<Record<Locale, Record<string, string>>> = {
-  es: index(es),
-  it: index(it),
-  de: index(de),
-  tr: index(tr),
-  ar: index(ar),
-  ja: index(ja),
+const tables: Partial<Record<Locale, Record<string, string>>> = {};
+const loaders = {
+  es: () => import("./host/es.json"), it: () => import("./host/it.json"),
+  de: () => import("./host/de.json"), tr: () => import("./host/tr.json"),
+  ar: () => import("./host/ar.json"), ja: () => import("./host/ja.json"),
 };
+export async function loadHostCopy(lang: Locale) {
+  if (lang === "en" || tables[lang]) return;
+  const module = await loaders[lang]();
+  tables[lang] = index(module.default);
+}
 
 /** Look up server copy by its English text. Unknown strings stay English. */
 export function hostCopy(text: string): string {

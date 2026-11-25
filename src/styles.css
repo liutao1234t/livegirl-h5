@@ -7571,3 +7571,5 @@ html.is-keyboard .sup-composer {
 .hub-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .45; }
 .hub-cover div { position: relative; text-align: center; font-weight: 600; }
 .hub-cover progress { display: block; width: 128px; height: 6px; margin: 10px auto 0; accent-color: #ff6996; }
+
+.route-loading { height: 100%; display: grid; place-items: center; background: var(--bg-deep); }

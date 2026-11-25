@@ -1,4 +1,5 @@
-import { useEffect, useState, type AnimationEvent } from "react";
+import { LazyContent } from "./LazyContent";
+import { lazy, useEffect, useState, type AnimationEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { getGirl } from "../data/girls";
 import { newbieIap, reward3Iap } from "../data/iap";
@@ -6,7 +7,6 @@ import { gifts } from "../data/shop";
 import { appStoreReviewUrl } from "../lib/nativeShare";
 import { openCoinShop } from "../lib/paywall";
 import { CoinPackGrid } from "../pages/CoinPacks";
-import { LiveHubUnlock } from "../pages/LiveHubPage";
 import {
   CHECKIN_BONUS,
   CHECKIN_REWARD,
@@ -19,6 +19,8 @@ import {
 } from "../store/appStore";
 import { publicUrl } from "../lib/publicUrl";
 import { formatCount, giftLabel, locale, t } from "../i18n";
+
+const LiveHubUnlock = lazy(() => import("../pages/LiveHubPage").then((m) => ({ default: m.LiveHubUnlock })));
 
 const NEW_MSG_HOLD_MS = 3000;
 const ACCOUNT_RESET_MS = 2000;
@@ -96,7 +98,7 @@ export function OverlayHost() {
         <div className="overlay-root" />
       ) : (
     <div className={`overlay-root${isBanner ? " is-toast" : " is-open"}${isSheet ? " is-sheet" : ""}${isReward3 ? " is-reward3" : ""}${leaving ? " is-leaving" : ""}`}>
-      {isLiveHub ? <LiveHubUnlock /> : null}
+      {isLiveHub ? <LazyContent><LiveHubUnlock /></LazyContent> : null}
       {isBanner || isLiveHub ? null : <button className="overlay-mask" aria-label={t("common.close")} onClick={leaving ? undefined : close} />}
       {isLiveHub ? null : isSheet ? (
         <div className={`overlay-sheet ${leaving ? "is-out" : "is-in"}`} onAnimationEnd={onStageEnd}>

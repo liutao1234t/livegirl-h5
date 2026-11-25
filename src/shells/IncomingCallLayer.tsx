@@ -1,7 +1,9 @@
-import { useEffect, useLayoutEffect, useState, type AnimationEvent } from "react";
+import { LazyContent } from "./LazyContent";
+import { lazy, useEffect, useLayoutEffect, useState, type AnimationEvent } from "react";
 import { useLocation } from "react-router-dom";
-import { IncomingCallPage } from "../pages/CallPages";
 import { consumeSkipIncomingExit, useIncomingCallStore } from "../store/incomingCallStore";
+
+const IncomingCallPage = lazy(() => import("../pages/CallPages").then((m) => ({ default: m.IncomingCallPage })));
 
 const EXIT_MS = 450;
 
@@ -42,7 +44,7 @@ export function IncomingCallLayer() {
 
   return (
     <div className={`incoming-layer is-${phase}`} key={shownId} onAnimationEnd={onAnimEnd}>
-      <IncomingCallPage girlId={shownId} />
+      <LazyContent><IncomingCallPage girlId={shownId} /></LazyContent>
     </div>
   );
 }
